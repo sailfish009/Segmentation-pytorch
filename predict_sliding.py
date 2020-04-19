@@ -25,13 +25,22 @@ def pad_image(img, target_size):
     padded_img = np.pad(img, ((0, 0), (0, 0), (0, rows_missing), (0, cols_missing)), 'constant')
     return padded_img	#shape(1,3,512,512)
 
+def pad_label(img, target_size):
+    """Pad an image up to the target size."""
+    rows_missing = target_size[0] - img.shape[1]	#512-512 = 0
+    cols_missing = target_size[1] - img.shape[2]	#512-512 = 0
+    #在右、下边用0padding
+    padded_img = np.pad(img, ((0, 0), (0, rows_missing), (0, cols_missing)), 'constant')
+    return padded_img	#shape(1,512,512)
+
 #滑动窗口法
 #image.shape(1,3,1024,2048)、tile_size=(512,512)、classes=3、flip=True、recur=1
 #image:需要预测的图片(1,3,3072,3328);tile_size:小方块大小;
 def predict_sliding(net, image, tile_size, classes):    
     total_batches = len(image)
+    mIOU_val, per_class_iu = [], []
     pbar = tqdm(iterable=enumerate(image), total=total_batches, desc='Predicting')
-    for i, (input, size, name, label) in pbar:
+    for i, (input, size, name, gt) in pbar:
         image_size = input.shape	#(1,3,3328,3072)
         overlap = 1/3	#每次滑动的覆盖率为1/3
         # print(image_size, tile_size)
@@ -50,8 +59,10 @@ def predict_sliding(net, image, tile_size, classes):
                 x1 = max(int(x2 - tile_size[1]), 0)  #重新校准起始位置x1 = max(512-512, 0)
                 y1 = max(int(y2 - tile_size[0]), 0)  #				  y1 = max(512-512, 0)
 
-                img = input[:, :, y1:y2, x1:x2]	#滑动窗口对应的图像 imge[:, :, 0:512, 0:512]        
+                img = input[:, :, y1:y2, x1:x2]	#滑动窗口对应的图像 imge[:, :, 0:512, 0:512]
+                label = gt[:, y1:y2, x1:x2]
                 padded_img = pad_image(img, tile_size)	#padding 确保扣下来的图像为512*512
+                padded_label = pad_label(label, tile_size)
                 # plt.imshow(padded_img)
                 # plt.show()
                 data_list = []
@@ -61,11 +72,12 @@ def predict_sliding(net, image, tile_size, classes):
                     padded_prediction = net(input_var)
                     # 计算miou
                     torch.cuda.synchronize()
-                    output = output.cpu().data[0].numpy()
-                    gt = np.asarray(label[0].numpy(), dtype=np.uint8)
+                    output = padded_prediction.cpu().data[0].numpy()
+                    gt_padded = np.asarray(padded_label[0], dtype=np.uint8)
                     output = output.transpose(1, 2, 0)
                     output = np.asarray(np.argmax(output, axis=2), dtype=np.uint8)
-                    data_list.append([gt.flatten(), output.flatten()])
+                    data_list.append([gt_padded.flatten(), output.flatten()])
+
                 if isinstance(padded_prediction, list):
                     padded_prediction = padded_prediction[0]	#shape(1,3,512,512)
 
@@ -75,7 +87,10 @@ def predict_sliding(net, image, tile_size, classes):
                 count_predictions[y1:y2, x1:x2] += 1	#窗口区域内的计数矩阵加1
                 full_probs[y1:y2, x1:x2] += prediction  #窗口区域内的全概率矩阵叠加预测结果
 
-                meanIoU, per_class_iu = get_iou(data_list, args.classes)
+                # 计算miou
+                meanIoU0, per_class_iu0 = get_iou(data_list, args.classes)
+                mIOU_val.append(meanIoU0)
+                per_class_iu.append(per_class_iu0)
 
 
         # average the predictions in the overlapping regions
@@ -85,13 +100,11 @@ def predict_sliding(net, image, tile_size, classes):
         # plt.show()
         full_probs = np.asarray(np.argmax(full_probs, axis=2), dtype=np.uint8)
         '''设置输出原图和预测图片的颜色灰度还是彩色'''
-        save_predict(full_probs, None, name[0], args.dataset, args.save_seg_dir,
-                     output_grey=False, output_color=True, gt_color=False)
+        gt = gt[0].numpy()
+        save_predict(full_probs, gt, name[0], args.dataset, args.save_seg_dir,
+                     output_grey=False, output_color=True, gt_color=True)
         # return full_probs	#返回整张图的平均概率 shape(1024,2048,3)
-
-
-
-
+    return mIOU_val, per_class_iu
 
     
 
@@ -134,7 +147,8 @@ def test_model(args):
             raise FileNotFoundError("no checkpoint found at '{}'".format(args.checkpoint))
 
     print("=====> beginning testing")
-    predict_sliding(model.eval(), image = testLoader, tile_size=(512,512), classes=args.classes)
+    mIOU_val, per_class_iu = predict_sliding(model.eval(), image = testLoader, tile_size=(512,512), classes=args.classes)
+    print('Miou is: {:.4f}'.format(sum(mIOU_val)/len(mIOU_val)))
 
 
 if __name__ == '__main__':
