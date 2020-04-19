@@ -150,9 +150,9 @@ def test_model(args):
         logger.write("%.4f\t" % per_class_iu_max[i])
 
     logger.write("\n\nPer class IoU:\n")
-    logger.write("Epoch  Miou  class0  class1  class2\n")
+    logger.write("Epoch  	Miou  	class0  class1  class2\n")
     for i in range(len(per_class_iu)):
-        logger.write("{}\t\t\t{}\t".format(i, mIOU_val[i]))
+        logger.write("{}\t{:.2f}\t".format(i, mIOU_val[i]))
         for j in range(3):
             logger.write("{:.4f}\t".format(per_class_iu[i][j]))
         logger.write("\n")
