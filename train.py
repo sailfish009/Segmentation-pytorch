@@ -3,8 +3,7 @@ import time
 import torch
 import torch.nn as nn
 import timeit
-# import numpy as np
-import minpy.numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
@@ -218,7 +217,7 @@ def train_model(args):
         logger = open(logFileLoc, 'a')
     else:
         logger = open(logFileLoc, 'w')
-        logger.write("Parameters: %s Seed: %s" % (str(total_paramters), GLOBAL_SEED))
+        logger.write("Parameters: %s Seed: %s\n %s" % (str(total_paramters/ 1e6), GLOBAL_SEED, args))
         logger.write("\n%s\t%s\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s" % ('Epoch', 'lr', 'Loss(Tr)', 'mIOU (val)', 'Class-0', 'Class-1', 'Class-2'))
     logger.flush()
 
@@ -269,7 +268,7 @@ def train_model(args):
                                                                                  mIOU_val, lr))
         else:
             # record train information
-            logger.write("\n%d\t\t%.5f\t\t%.5f" % (epoch, lr, lossTr))
+            logger.write("\n%d\t%.5f\t\t%.5f" % (epoch, lr, lossTr))
             logger.flush()
             print("Epoch %d\tTrain Loss = %.4f\t lr= %.6f\n" % (epoch, lossTr, lr))
 
