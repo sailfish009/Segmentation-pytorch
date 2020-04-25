@@ -3,6 +3,33 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+<<<<<<< HEAD
+class BinCrossEntropyLoss2d(nn.Module):
+    '''
+    This file defines a cross entropy loss for 2D images
+    '''
+
+    def __init__(self, weight=None, ignore_label=255):
+        '''
+        :param weight: 1D weight vector to deal with the class-imbalance
+        Obtaining log-probabilities in a neural network is easily achieved by adding a LogSoftmax layer in the last layer of your network.
+        You may use CrossEntropyLoss instead, if you prefer not to add an extra layer.
+        '''
+        super().__init__()
+
+        # self.loss = nn.NLLLoss2d(weight, ignore_index=ignore_label)
+        self.loss = nn.BCELoss(weight)
+        # self.loss = nn.BCEWithLogitsLoss(weight)
+
+    def forward(self, outputs, targets):
+        outputs = F.sigmoid(outputs)
+        outputs = torch.argmax(outputs, dim=1).Float()
+        # print(outputs.size(), targets.size())
+        return self.loss(outputs, targets)
+
+
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 class CrossEntropyLoss2d(nn.Module):
     '''
     This file defines a cross entropy loss for 2D images
@@ -16,11 +43,21 @@ class CrossEntropyLoss2d(nn.Module):
         '''
         super().__init__()
 
+<<<<<<< HEAD
+        # self.loss = nn.NLLLoss2d(weight, ignore_index=ignore_label)
+        self.loss = nn.NLLLoss(weight, ignore_index=ignore_label)
+
+    def forward(self, outputs, targets):
+        outputs = F.log_softmax(outputs, 1)
+        # print(outputs.size(), targets.size())
+        return self.loss(outputs, targets)
+=======
         self.loss = nn.NLLLoss2d(weight, ignore_index=ignore_label)
         # self.loss = nn.NLLLoss(weight, ignore_index=ignore_label)
 
     def forward(self, outputs, targets):
         return self.loss(F.log_softmax(outputs, 1), targets)
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
 
 class FocalLoss2d(nn.Module):

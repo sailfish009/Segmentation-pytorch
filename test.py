@@ -117,12 +117,20 @@ def test_model(args):
                     print("beginning test the:" + basename)
                     print("validation set length: ", len(testLoader))
                     mIOU_val_0, per_class_iu_0 = test(args, testLoader, model)
+<<<<<<< HEAD
+                    print('Miou Val is ', mIOU_val_0, per_class_iu_0)
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
                     mIOU_val.append(mIOU_val_0)
                     per_class_iu.append(per_class_iu_0)
 
                 # index = list(range(epoch - 19, epoch + 1))[np.argmax(mIOU_val)]
                 index = check_num[np.argmax(mIOU_val)]
+<<<<<<< HEAD
+                print("The best mIoU among the models is", index-1)
+=======
                 print("The best mIoU among the models is", index)
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
                 per_class_iu_max = per_class_iu[np.argmax(mIOU_val)]
                 mIOU_val_max = np.max(mIOU_val)
 
@@ -152,7 +160,11 @@ def test_model(args):
     logger.write("\n\nPer class IoU:\n")
     logger.write("Epoch  	Miou  	class0  class1  class2\n")
     for i in range(len(per_class_iu)):
+<<<<<<< HEAD
+        logger.write("{}\t{:.4f}\t".format(i, mIOU_val[i]))
+=======
         logger.write("{}\t{:.2f}\t".format(i, mIOU_val[i]))
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         for j in range(3):
             logger.write("{:.4f}\t".format(per_class_iu[i][j]))
         logger.write("\n")

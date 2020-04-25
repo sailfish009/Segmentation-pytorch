@@ -6,27 +6,28 @@ from torch.utils import data
 import pickle
 
 
-class CityscapesDataSet(data.Dataset):
-    """ 
-       CityscapesDataSet is employed to load train set
+class RoadDataSet(data.Dataset):
+    """
+       RoadDataSet is employed to load train set
        Args:
-        root: the Cityscapes dataset path, 
-         cityscapes
+        root: the Road dataset path,
+         Road
           ├── gtFine
           ├── leftImg8bit
-        list_path: cityscapes_train_list.txt, include partial path
+        list_path: Road_train_list.txt, include partial path
         mean: bgr_mean (73.15835921, 82.90891754, 72.39239876)
 
     """
 
     def __init__(self, root='', list_path='', max_iters=None,
-                 crop_size=(512, 1024), mean=(128, 128, 128), scale=True, mirror=True, ignore_label=255):
+                 crop_size=(512, 512), mean=(128, 128, 128), std=(128, 128, 128), scale=True, mirror=True, ignore_label=0):
         self.root = root
         self.list_path = list_path
         self.crop_h, self.crop_w = crop_size
         self.scale = scale
         self.ignore_label = ignore_label
         self.mean = mean
+        self.std = std
         self.is_mirror = mirror
         self.img_ids = [i_id.strip() for i_id in open(list_path)]
         if not max_iters == None:
@@ -36,9 +37,9 @@ class CityscapesDataSet(data.Dataset):
         # for split in ["train", "trainval", "val"]:
         for name in self.img_ids:
             img_file = osp.join(self.root, name.split()[0])
-            # print('img_file is',img_file)
+            # print(img_file)
             label_file = osp.join(self.root, name.split()[1])
-            # print('label file is', label_file)
+            # print(label_file)
             self.files.append({
                 "img": img_file,
                 "label": label_file,
@@ -64,13 +65,9 @@ class CityscapesDataSet(data.Dataset):
             label = cv2.resize(label, None, fx=f_scale, fy=f_scale, interpolation=cv2.INTER_NEAREST)
 
         image = np.asarray(image, np.float32)
-
         image -= self.mean
-<<<<<<< HEAD
         image = image.astype(np.float32) / 255.0
-=======
-        # image = image.astype(np.float32) / 255.0
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
+        # image = image.astype(np.float32) / self.std
         image = image[:, :, ::-1]  # change to RGB
         img_h, img_w = label.shape
         pad_h = max(self.crop_h - img_h, 0)
@@ -79,63 +76,83 @@ class CityscapesDataSet(data.Dataset):
             img_pad = cv2.copyMakeBorder(image, 0, pad_h, 0,
                                          pad_w, cv2.BORDER_CONSTANT,
                                          value=(0.0, 0.0, 0.0))
+
             label_pad = cv2.copyMakeBorder(label, 0, pad_h, 0,
                                            pad_w, cv2.BORDER_CONSTANT,
                                            value=(self.ignore_label,))
         else:
             img_pad, label_pad = image, label
 
+
         img_h, img_w = label_pad.shape
         h_off = random.randint(0, img_h - self.crop_h)
         w_off = random.randint(0, img_w - self.crop_w)
-        # roi = cv2.Rect(w_off, h_off, self.crop_w, self.crop_h);
         image = np.asarray(img_pad[h_off: h_off + self.crop_h, w_off: w_off + self.crop_w], np.float32)
         label = np.asarray(label_pad[h_off: h_off + self.crop_h, w_off: w_off + self.crop_w], np.float32)
-
         image = image.transpose((2, 0, 1))  # NHWC -> NCHW
-
         if self.is_mirror:
             flip = np.random.choice(2) * 2 - 1
             image = image[:, :, ::flip]
             label = label[:, ::flip]
-
+        '''overlap 训练需要修改下面97-124，并注释71-95行代码'''
+        # img_h, img_w = label.shape # 被放大和缩小之后的shape,对缩后图进pad0操作
+        # pad_h = max(self.crop_h - img_h, 0)
+        # pad_w = max(self.crop_w - img_w, 0)
+        # if pad_h > 0 or pad_w > 0:
+        #     img_pad = cv2.copyMakeBorder(image, 0, pad_h, 0,
+        #                                  pad_w, cv2.BORDER_CONSTANT,
+        #                                  value=(0.0, 0.0, 0.0))
+        #
+        #     label_pad = cv2.copyMakeBorder(label, 0, pad_h, 0,
+        #                                    pad_w, cv2.BORDER_CONSTANT,
+        #                                    value=(self.ignore_label,))
+        # else:
+        #     img_pad, label_pad = image, label
+        #
+        #
+        # img_h, img_w = label_pad.shape
+        # h_off = random.randint(0, img_h - self.crop_h)
+        # w_off = random.randint(0, img_w - self.crop_w)
+        # image = np.asarray(img_pad[h_off: h_off + self.crop_h, w_off: w_off + self.crop_w], np.float32)
+        # label = np.asarray(label_pad[h_off: h_off + 324, w_off: w_off + 324], np.float32)
+        #
+        # image = image.transpose((2, 0, 1))  # NHWC -> NCHW
+        #
+        # if self.is_mirror:
+        #     flip = np.random.choice(2) * 2 - 1
+        #     image = image[:, :, ::flip]
+        #     label = label[:, ::flip]
         return image.copy(), label.copy(), np.array(size), name
 
 
-class CityscapesValDataSet(data.Dataset):
-    """ 
-       CityscapesDataSet is employed to load val set
+class RoadValDataSet(data.Dataset):
+    """
+       RoadDataSet is employed to load val set
        Args:
-        root: the Cityscapes dataset path, 
-         cityscapes
+        root: the Road dataset path,
+         Road
           ├── gtFine
           ├── leftImg8bit
-        list_path: cityscapes_val_list.txt, include partial path
+        list_path: Road_val_list.txt, include partial path
 
     """
 
     def __init__(self, root='',
-                 list_path='',
-                 f_scale=1, mean=(128, 128, 128), ignore_label=255):
+                 list_path='',  std=(128, 128, 128),
+                 f_scale=1, mean=(128, 128, 128), ignore_label=0):
         self.root = root
         self.list_path = list_path
         self.ignore_label = ignore_label
         self.mean = mean
+        self.std = std
         self.f_scale = f_scale
         self.img_ids = [i_id.strip() for i_id in open(list_path)]
         self.files = []
         for name in self.img_ids:
             img_file = osp.join(self.root, name.split()[0])
-<<<<<<< HEAD
             # print(img_file)
             label_file = osp.join(self.root, name.split()[1])
             # print(label_file)
-=======
-            print(img_file)
-            label_file = osp.join(self.root, name.split()[1])
-            print(label_file)
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
-            # image_name = name.strip().split()[0].strip().split('/', 3)[3].split('.')[0]
             image_name = name.strip().split('/')[-1].split('.')[0]
             # print("image_name:  ",image_name)
             self.files.append({
@@ -163,11 +180,8 @@ class CityscapesValDataSet(data.Dataset):
         image = np.asarray(image, np.float32)
 
         image -= self.mean
-<<<<<<< HEAD
         image = image.astype(np.float32) / 255.0
-=======
-        # image = image.astype(np.float32) / 255.0
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
+        # image = image.astype(np.float32) / self.std
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
 
@@ -175,33 +189,40 @@ class CityscapesValDataSet(data.Dataset):
         return image.copy(), label.copy(), np.array(size), name
 
 
-class CityscapesTestDataSet(data.Dataset):
-    """ 
-       CityscapesDataSet is employed to load test set
+class RoadTestDataSet(data.Dataset):
+    """
+       RoadDataSet is employed to load test set
        Args:
-        root: the Cityscapes dataset path,
-        list_path: cityscapes_test_list.txt, include partial path
+        root: the Road dataset path,
+        list_path: Road_test_list.txt, include partial path
 
     """
 
     def __init__(self, root='',
-                 list_path='', mean=(128, 128, 128),
-                 ignore_label=255):
+                 list_path='', mean=(128, 128, 128), std=(128, 128, 128),
+                 ignore_label=0):
         self.root = root
         self.list_path = list_path
         self.ignore_label = ignore_label
         self.mean = mean
+        self.std = std
         self.img_ids = [i_id.strip() for i_id in open(list_path)]
         self.files = []
         for name in self.img_ids:
+            # print(name.split()[1])
             img_file = osp.join(self.root, name.split()[0])
             # print(img_file)
-            image_name = name.strip().split()[0].strip().split('/', 3)[3].split('.')[0]
-            # print(image_name)
+            '''########'''
+            label_file = osp.join(self.root, name.split()[1])
+            # print(label_file)
+            image_name = name.strip().split('/')[-1].split('.')[0]
+            # print("image_name:  ",image_name)
             self.files.append({
                 "img": img_file,
+                "label": label_file,
                 "name": image_name
             })
+
         print("lenth of dataset: ", len(self.files))
 
     def __len__(self):
@@ -211,27 +232,26 @@ class CityscapesTestDataSet(data.Dataset):
         datafiles = self.files[index]
 
         image = cv2.imread(datafiles["img"], cv2.IMREAD_COLOR)
+        label = cv2.imread(datafiles["label"], cv2.IMREAD_GRAYSCALE)
+
         name = datafiles["name"]
         image = np.asarray(image, np.float32)
         size = image.shape
 
         image -= self.mean
-<<<<<<< HEAD
         image = image.astype(np.float32) / 255.0
-=======
-        # image = image.astype(np.float32) / 255.0
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
+        # image = image.astype(np.float32) / self.std
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
-        return image.copy(), np.array(size), name
+        return image.copy(), np.array(size), name, label.copy()
 
 
-class CityscapesTrainInform:
+class RoadTrainInform:
     """ To get statistical information about the train set, such as mean, std, class distribution.
         The class is employed for tackle class imbalance.
     """
 
-    def __init__(self, data_dir='', classes=19,
+    def __init__(self, data_dir='', classes=3,
                  train_set_file="", inform_data_file="", normVal=1.10):
         """
         Args:
@@ -263,7 +283,7 @@ class CityscapesTrainInform:
         Args:
         fileName: train set file that stores the image locations
         trainStg: if processing training or validation data
-        
+
         return: 0 if successful
         """
         global_hist = np.zeros(self.classes, dtype=np.float32)
@@ -289,7 +309,7 @@ class CityscapesTrainInform:
                 min_val_al = min(min_val, min_val_al)
 
                 if train_flag == True:
-                    hist = np.histogram(label_img, self.classes, range=(0, 18))
+                    hist = np.histogram(label_img, self.classes, range=(0, self.classes-1))
                     global_hist += hist[0]
 
                     rgb_img = cv2.imread(img_file)
@@ -303,8 +323,7 @@ class CityscapesTrainInform:
 
                 else:
                     print("we can only collect statistical information of train set, please check")
-                print(max_val)
-                print(min_val)
+
                 if max_val > (self.classes - 1) or min_val < 0:
                     print('Labels can take value between 0 and number of classes.')
                     print('Some problem with labels. Please check. label_set:', unique_values)

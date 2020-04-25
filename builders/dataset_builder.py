@@ -5,6 +5,10 @@ from dataset.cityscapes import CityscapesDataSet, CityscapesTrainInform, Citysca
 from dataset.camvid import CamVidDataSet, CamVidValDataSet, CamVidTrainInform, CamVidTestDataSet
 from dataset.paris import ParisDataSet, ParisValDataSet, ParisTrainInform, ParisTestDataSet
 from dataset.austin import AustinDataSet, AustinValDataSet, AustinTrainInform, AustinTestDataSet
+<<<<<<< HEAD
+from dataset.road import RoadDataSet, RoadValDataSet, RoadTrainInform, RoadTestDataSet
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
 
 def build_dataset_train(dataset, input_size, batch_size, train_type, random_scale, random_mirror, num_workers):
@@ -31,6 +35,12 @@ def build_dataset_train(dataset, input_size, batch_size, train_type, random_scal
         elif dataset == 'austin':
             dataCollect = AustinTrainInform(data_dir, 2, train_set_file=dataset_list,
                                            inform_data_file=inform_data_file)
+<<<<<<< HEAD
+        elif dataset == 'road':
+            dataCollect = RoadTrainInform(data_dir, 2, train_set_file=dataset_list,
+                                            inform_data_file=inform_data_file)
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         else:
             raise NotImplementedError(
                 "This repository now supports two datasets: cityscapes and camvid, %s is not included" % dataset)
@@ -76,12 +86,20 @@ def build_dataset_train(dataset, input_size, batch_size, train_type, random_scal
 
         trainLoader = data.DataLoader(
             ParisDataSet(data_dir, train_data_list, crop_size=input_size, scale=random_scale,
+<<<<<<< HEAD
+                          mirror=random_mirror, mean=datas['mean'], std=datas['std']),
+=======
                           mirror=random_mirror, mean=datas['mean']),
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
             batch_size=batch_size, shuffle=True, num_workers=num_workers,
             pin_memory=True, drop_last=True)
 
         valLoader = data.DataLoader(
+<<<<<<< HEAD
+            ParisValDataSet(data_dir, val_data_list, f_scale=1, mean=datas['mean'], std=datas['std']),
+=======
             ParisValDataSet(data_dir, val_data_list, f_scale=1, mean=datas['mean']),
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
             batch_size=1, shuffle=True, num_workers=num_workers, pin_memory=True)
 
         return datas, trainLoader, valLoader
@@ -100,6 +118,23 @@ def build_dataset_train(dataset, input_size, batch_size, train_type, random_scal
 
         return datas, trainLoader, valLoader
 
+<<<<<<< HEAD
+    elif dataset == "road":
+
+        trainLoader = data.DataLoader(
+            RoadDataSet(data_dir, train_data_list, crop_size=input_size, scale=random_scale,
+                          mirror=random_mirror, mean=datas['mean']),
+            batch_size=batch_size, shuffle=True, num_workers=num_workers,
+            pin_memory=True, drop_last=True)
+
+        valLoader = data.DataLoader(
+            RoadValDataSet(data_dir, val_data_list, f_scale=1, mean=datas['mean']),
+            batch_size=1, shuffle=True, num_workers=num_workers, pin_memory=True)
+
+        return datas, trainLoader, valLoader
+
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
 def build_dataset_test(dataset, num_workers, none_gt=False):
     data_dir = os.path.join('/media/ding/Data/datasets', dataset)
@@ -125,6 +160,12 @@ def build_dataset_test(dataset, num_workers, none_gt=False):
         elif dataset == 'austin':
             dataCollect = AustinTrainInform(data_dir, 2, train_set_file=dataset_list,
                                            inform_data_file=inform_data_file)
+<<<<<<< HEAD
+        elif dataset == 'road':
+            dataCollect = RoadTrainInform(data_dir, 2, train_set_file=dataset_list,
+                                            inform_data_file=inform_data_file)
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         else:
             raise NotImplementedError(
                 "This repository now supports two datasets: cityscapes and camvid, %s is not included" % dataset)
@@ -176,4 +217,15 @@ def build_dataset_test(dataset, num_workers, none_gt=False):
 
         return datas, testLoader
 
+<<<<<<< HEAD
+    elif dataset == "road":
+
+        testLoader = data.DataLoader(
+            RoadTestDataSet(data_dir, test_data_list, mean=datas['mean']),
+            batch_size=1, shuffle=False, num_workers=num_workers, pin_memory=True)
+
+        return datas, testLoader
+
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 

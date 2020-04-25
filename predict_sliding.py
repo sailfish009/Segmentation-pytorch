@@ -36,7 +36,11 @@ def pad_label(img, target_size):
 #滑动窗口法
 #image.shape(1,3,1024,2048)、tile_size=(512,512)、classes=3、flip=True、recur=1
 #image:需要预测的图片(1,3,3072,3328);tile_size:小方块大小;
+<<<<<<< HEAD
+def predict_sliding(net, image, tile_size, classes):
+=======
 def predict_sliding(net, image, tile_size, classes):    
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     total_batches = len(image)
     mIOU_val, per_class_iu = [], []
     pbar = tqdm(iterable=enumerate(image), total=total_batches, desc='Predicting')
@@ -88,6 +92,10 @@ def predict_sliding(net, image, tile_size, classes):
                 full_probs[y1:y2, x1:x2] += prediction  #窗口区域内的全概率矩阵叠加预测结果
 
                 # 计算miou
+<<<<<<< HEAD
+                # print(data_list)
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
                 meanIoU0, per_class_iu0 = get_iou(data_list, args.classes)
                 mIOU_val.append(meanIoU0)
                 per_class_iu.append(per_class_iu0)
@@ -106,7 +114,10 @@ def predict_sliding(net, image, tile_size, classes):
         # return full_probs	#返回整张图的平均概率 shape(1024,2048,3)
     return mIOU_val, per_class_iu
 
+<<<<<<< HEAD
+=======
     
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
 
 def test_model(args):
@@ -147,7 +158,11 @@ def test_model(args):
             raise FileNotFoundError("no checkpoint found at '{}'".format(args.checkpoint))
 
     print("=====> beginning testing")
+<<<<<<< HEAD
+    mIOU_val, per_class_iu = predict_sliding(model.eval(), image = testLoader, tile_size=(args.tile_size, args.tile_size), classes=args.classes)
+=======
     mIOU_val, per_class_iu = predict_sliding(model.eval(), image = testLoader, tile_size=(512,512), classes=args.classes)
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     print('Miou is: {:.4f}'.format(sum(mIOU_val)/len(mIOU_val)))
 
 
@@ -158,6 +173,11 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=1, help="the number of parallel threads")
     parser.add_argument('--batch_size', type=int, default=1,
                         help=" the batch_size is set to 1 when evaluating or testing")
+<<<<<<< HEAD
+    parser.add_argument('--tile_size', type=int, default=512,
+                        help=" the tile_size is when evaluating or testing")
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     parser.add_argument('--checkpoint', type=str,
                         default='',
                         help="use the file to load the checkpoint for evaluating or testing ")
@@ -171,13 +191,22 @@ if __name__ == '__main__':
     args.save_seg_dir = os.path.join(args.save_seg_dir, args.dataset, 'predict_sliding', save_dirname)
 
     if args.dataset == 'cityscapes':
+<<<<<<< HEAD
+        args.classes = 19
+=======
         args.classes = 3
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     elif args.dataset == 'camvid':
         args.classes = 11
     elif args.dataset == 'paris':
         args.classes = 3
     elif args.dataset == 'austin':
         args.classes = 2
+<<<<<<< HEAD
+    elif args.dataset == 'road':
+        args.classes = 2
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     else:
         raise NotImplementedError(
             "This repository now supports two datasets: cityscapes and camvid, %s is not included" % args.dataset)

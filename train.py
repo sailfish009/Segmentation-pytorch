@@ -13,11 +13,20 @@ from builders.model_builder import build_model
 from builders.dataset_builder import build_dataset_train
 from tools.utils import setup_seed, init_weight, netParams
 from tools.metric import get_iou
+<<<<<<< HEAD
+from tools.loss import CrossEntropyLoss2d, ProbOhemCrossEntropy2d, BinCrossEntropyLoss2d
+=======
 from tools.loss import CrossEntropyLoss2d, ProbOhemCrossEntropy2d
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 from tools.lr_scheduler import WarmupPolyLR, poly_learning_rate
 from tqdm import tqdm
 from tools.convert_state import convert_state_dict
 from time import strftime, localtime
+<<<<<<< HEAD
+from cupy.core.dlpack import toDlpack
+from torch.utils.dlpack import from_dlpack
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 date = strftime("%Y-%m-%d_%H:%M:%S", localtime())
 print(date)
 
@@ -39,7 +48,11 @@ def val(args, val_loader, model):
     pbar = tqdm(iterable=enumerate(val_loader), total=total_batches, desc='Val')
     for i, (input, label, size, name) in pbar:
         with torch.no_grad():
+<<<<<<< HEAD
+            input_var = Variable(input).cuda().float()
+=======
             input_var = Variable(input).cuda()
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         output = model(input_var)
 
         output = output.cpu().data[0].numpy()
@@ -67,7 +80,11 @@ def train(args, train_loader, model, criterion, optimizer, epoch):
     total_batches = len(train_loader)
 
     st = time.time()
+<<<<<<< HEAD
+    pbar = tqdm(iterable=enumerate(train_loader), total=total_batches, desc='Epoch {}/{}'.format(epoch, args.max_epochs))
+=======
     pbar = tqdm(iterable=enumerate(train_loader), total=total_batches, desc='Epoch {}'.format(epoch))
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     for iteration, batch in pbar:
         args.per_iter = total_batches
         args.max_iter = args.max_epochs * args.per_iter
@@ -77,6 +94,10 @@ def train(args, train_loader, model, criterion, optimizer, epoch):
         lr = optimizer.param_groups[0]['lr']
 
         images, labels, _, _ = batch
+<<<<<<< HEAD
+
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         images = Variable(images).cuda()
         labels = Variable(labels.long()).cuda()
 
@@ -173,7 +194,15 @@ def train_model(args):
         # min_kept = int(args.batch_size // len(args.gpus) * h * w // 16)
         # criteria = ProbOhemCrossEntropy2d(ignore_label=ignore_label, thresh=0.7, min_kept=min_kept, use_weight=False)
     elif args.dataset == 'austin':
+<<<<<<< HEAD
+        criteria = BinCrossEntropyLoss2d(weight=weight)
+        # criteria = nn.CrossEntropyLoss()
+    elif args.dataset == 'road':
         criteria = CrossEntropyLoss2d(weight=weight, ignore_label=ignore_label)
+        # criteria = BinCrossEntropyLoss2d(weight=weight)
+=======
+        criteria = CrossEntropyLoss2d(weight=weight, ignore_label=ignore_label)
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         # criteria = nn.CrossEntropyLoss()
     else:
         raise NotImplementedError(
@@ -217,7 +246,11 @@ def train_model(args):
         logger = open(logFileLoc, 'a')
     else:
         logger = open(logFileLoc, 'w')
+<<<<<<< HEAD
+        logger.write("Parameters: %s Seed: %s\n %s\n" % (str(total_paramters/ 1e6), GLOBAL_SEED, args))
+=======
         logger.write("Parameters: %s Seed: %s\n %s" % (str(total_paramters/ 1e6), GLOBAL_SEED, args))
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         logger.write("\n%s\t%s\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s" % ('Epoch', 'lr', 'Loss(Tr)', 'mIOU (val)', 'Class-0', 'Class-1', 'Class-2'))
     logger.flush()
 
@@ -237,10 +270,21 @@ def train_model(args):
     elif args.dataset == 'austin':
         optimizer = torch.optim.SGD(
             filter(lambda p: p.requires_grad, model.parameters()), args.lr, momentum=0.9, weight_decay=1e-4)
+<<<<<<< HEAD
+
+    elif args.dataset == 'road':
+        optimizer = torch.optim.SGD(
+            filter(lambda p: p.requires_grad, model.parameters()), args.lr, momentum=0.9, weight_decay=1e-4)
+    lossTr_list = []
+    epoches = []
+    mIOU_val_list = []
+    min_loss = float('inf')
+=======
     lossTr_list = []
     epoches = []
     mIOU_val_list = []
 
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     print('***********************************************\n'
           '*******        Begining traing          *******\n'
           '***********************************************')
@@ -256,23 +300,48 @@ def train_model(args):
             mIOU_val_list.append(mIOU_val)
             # record train information
             if args.classes == 3:
+<<<<<<< HEAD
+                logger.write("\n%d\t%.6f\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1], per_class_iu[2]))
+            elif args.classes == 2:
+                logger.write("\n%d\t%.6f\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1]))
+            else:
+                for i in per_class_iu:
+                    logger.write("\n%d\t%.6f\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1]))
+=======
                 logger.write("\n%d\t%.5f\t\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1], per_class_iu[2]))
             elif args.classes == 2:
                 logger.write("\n%d\t%.5f\t\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1]))
             else:
                 for i in per_class_iu:
                     logger.write("\n%d\t\t%.5f\t\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1]))
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
             logger.flush()
             print("Epoch %d\tTrain Loss = %.4f\t mIOU(val) = %.4f\t lr= %.5f\n" % (epoch,
                                                                                  lossTr,
                                                                                  mIOU_val, lr))
         else:
             # record train information
+<<<<<<< HEAD
+            logger.write("\n%d\t%.6f\t%.5f" % (epoch, lr, lossTr))
+=======
             logger.write("\n%d\t%.5f\t\t%.5f" % (epoch, lr, lossTr))
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
             logger.flush()
             print("Epoch %d\tTrain Loss = %.4f\t lr= %.6f\n" % (epoch, lossTr, lr))
 
         # save the model
+<<<<<<< HEAD
+        model_file_name = args.savedir + '/model_' + str(epoch) + '.pth'
+        state = {"epoch": epoch, "model": model.state_dict()}
+
+        if min_loss > lossTr:
+            min_loss = lossTr
+            torch.save(state, model_file_name)
+        elif epoch >= args.max_epochs - args.val_epochs:
+            torch.save(state, model_file_name)
+        # elif not epoch % args.save_epochs:
+        #     torch.save(state, model_file_name)
+=======
         model_file_name = args.savedir + '/model_' + str(epoch + 1) + '.pth'
         state = {"epoch": epoch, "model": model.state_dict()}
 
@@ -280,6 +349,7 @@ def train_model(args):
             torch.save(state, model_file_name)
         elif not epoch % args.save_epochs:
             torch.save(state, model_file_name)
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
         # draw plots for visualization
         if epoch % args.val_epochs == 0 or epoch == (args.max_epochs - 1):
@@ -314,7 +384,11 @@ if __name__ == '__main__':
     start = timeit.default_timer()
     parser = ArgumentParser()
     parser.add_argument('--model', default="DABNet", help="model name in model_builder.py")
+<<<<<<< HEAD
+    parser.add_argument('--dataset', default="paris", help="dataset: road paris austin cityscapes or camvid ")
+=======
     parser.add_argument('--dataset', default="paris", help="dataset: paris austin cityscapes or camvid ")
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     parser.add_argument('--train_type', type=str, default="train",
                         help="ontrain for training on train set, ontrainval for training on train+val set")
     parser.add_argument('--train_val', type=str, default='True', help="train with val")
@@ -324,9 +398,15 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=8, help="the batch size is set to 16 for 2 GPUs")
     parser.add_argument('--num_loss', type=int, default=1, help="the number of loss for train")
     parser.add_argument('--val_epochs', type=int, default=10, help=" the number of val of epochs")
+<<<<<<< HEAD
+    parser.add_argument('--save_epochs', type=int, default=40, help=" the number of save checkpoint of epochs")
+    parser.add_argument('--random_mirror', type=bool, default=True, help="input image random mirror")
+    parser.add_argument('--random_scale', type=bool, default=True, help="input image resize 0.5 to 2")
+=======
     parser.add_argument('--save_epochs', type=int, default=1, help=" the number of save checkpoint of epochs")
     parser.add_argument('--random_mirror', type=bool, default=False, help="input image random mirror")
     parser.add_argument('--random_scale', type=bool, default=False, help="input image resize 0.5 to 2")
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     parser.add_argument('--num_workers', type=int, default=4, help=" the number of parallel threads")
     parser.add_argument('--savedir', default="./checkpoint/", help="directory to save the model snapshot")
     parser.add_argument('--resume', type=str, default="",
@@ -354,6 +434,14 @@ if __name__ == '__main__':
         # args.input_size = '1024,1024'
         args.input_size = '512,512'
         ignore_label = 2
+<<<<<<< HEAD
+    elif args.dataset == 'road':
+        args.classes = 2
+        # args.input_size = '1024,1024'
+        args.input_size = '500,500'
+        ignore_label = 2
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     else:
         raise NotImplementedError(
             "This repository now supports two datasets: cityscapes and camvid, %s is not included" % args.dataset)

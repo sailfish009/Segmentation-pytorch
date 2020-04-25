@@ -4,7 +4,11 @@ import numpy as np
 from PIL import Image
 import torch
 import torch.nn as nn
+<<<<<<< HEAD
+from tools.colorize_mask import cityscapes_colorize_mask, camvid_colorize_mask, paris_colorize_mask, austin_colorize_mask, road_colorize_mask
+=======
 from tools.colorize_mask import cityscapes_colorize_mask, camvid_colorize_mask, paris_colorize_mask, austin_colorize_mask
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
 
 def __init_weight(feature, conv_init, norm_layer, bn_eps, bn_momentum,
@@ -54,6 +58,11 @@ def save_predict(output, gt, img_name, dataset, save_path, output_grey=False, ou
             output_color = paris_colorize_mask(output)
         elif dataset == 'austin':
             output_color = austin_colorize_mask(output)
+<<<<<<< HEAD
+        elif dataset == 'road':
+            output_color = road_colorize_mask(output)
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         output_color.save(os.path.join(save_path, str(img_name) + '_colour.png'))
 
     if gt_color:
@@ -65,8 +74,15 @@ def save_predict(output, gt, img_name, dataset, save_path, output_grey=False, ou
             gt_color = paris_colorize_mask(gt)
         elif dataset == 'austin':
             gt_color = austin_colorize_mask(gt)
+<<<<<<< HEAD
+        elif dataset == 'road':
+            gt_color = road_colorize_mask(gt)
+
+        gt_color.save(os.path.join(save_path, str(img_name) + '_gt.png'))
+=======
 
         gt_color.save(os.path.join(save_path, img_name + '_gt.png'))
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
 
 def netParams(model):

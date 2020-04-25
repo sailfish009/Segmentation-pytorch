@@ -4,8 +4,15 @@ from model.UNet_overlap import UNet_overlap
 from model.GALDNet import GALD_res50, GALD_res101
 from model.ENet import ENet
 from model.PSPNet import PSPNet
+<<<<<<< HEAD
+from model.UNet_res_ori import UNet_res_ori  #没改变resnet基本结构
 from model.UNet_res import UNet_res
 from model.FCN import FCN_res
+from model.BiSeNet import BiSeNet
+=======
+from model.UNet_res import UNet_res
+from model.FCN import FCN_res
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
 
 
@@ -35,6 +42,18 @@ def build_model(model_name, num_classes):
     elif model_name == 'UNet_res101':
         return UNet_res(backbone='resnet101', pretrained=True, classes=num_classes)
 
+<<<<<<< HEAD
+    elif model_name == 'UNet_res18_ori':
+        return UNet_res_ori(backbone='resnet18', pretrained=True, classes=num_classes)
+    elif model_name == 'UNet_res34_ori':
+        return UNet_res_ori(backbone='resnet34', pretrained=True, classes=num_classes)
+    elif model_name == 'UNet_res50_ori':
+        return UNet_res_ori(backbone='resnet50', pretrained=True, classes=num_classes)
+    elif model_name == 'UNet_res101_ori':
+        return UNet_res_ori(backbone='resnet101', pretrained=True, classes=num_classes)
+
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     elif model_name == 'PSPNet_res18':
         return PSPNet(layers=18, bins=(1, 2, 3, 6), dropout=0.1, classes=num_classes, zoom_factor=8, use_ppm=True,
                             pretrained=True)
@@ -54,6 +73,13 @@ def build_model(model_name, num_classes):
     elif model_name == 'UNet_overlap':
         return UNet_overlap(classes=num_classes)
 
+<<<<<<< HEAD
+    elif model_name == 'BiSeNet_res18':
+        return  BiSeNet(backbone='resnet18', n_classes=num_classes, pretrained=False)
+    elif model_name == 'BiSeNet_res101':
+        return  BiSeNet(backbone='resnet101', n_classes=num_classes, pretrained=False)
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
     elif model_name == 'ENet':
         return ENet(classes=num_classes)

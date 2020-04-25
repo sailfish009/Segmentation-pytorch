@@ -4,6 +4,20 @@ import random
 import cv2
 from torch.utils import data
 import pickle
+<<<<<<< HEAD
+import cupy as cp
+from cupy.core.dlpack import toDlpack
+from cupy.core.dlpack import fromDlpack
+from torch.utils.dlpack import to_dlpack
+from torch.utils.dlpack import from_dlpack
+
+
+class ParisDataSet(data.Dataset):
+    """
+       ParisDataSet is employed to load train set
+       Args:
+        root: the Paris dataset path,
+=======
 
 
 class ParisDataSet(data.Dataset):
@@ -11,6 +25,7 @@ class ParisDataSet(data.Dataset):
        ParisDataSet is employed to load train set
        Args:
         root: the Paris dataset path, 
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
          Paris
           ├── gtFine
           ├── leftImg8bit
@@ -20,13 +35,21 @@ class ParisDataSet(data.Dataset):
     """
 
     def __init__(self, root='', list_path='', max_iters=None,
+<<<<<<< HEAD
+                 crop_size=(512, 512), mean=(128, 128, 128), std=(128, 128, 128), scale=True, mirror=True, ignore_label=0):
+=======
                  crop_size=(512, 512), mean=(128, 128, 128), scale=True, mirror=True, ignore_label=0):
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         self.root = root
         self.list_path = list_path
         self.crop_h, self.crop_w = crop_size
         self.scale = scale
         self.ignore_label = ignore_label
         self.mean = mean
+<<<<<<< HEAD
+        self.std = std
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         self.is_mirror = mirror
         self.img_ids = [i_id.strip() for i_id in open(list_path)]
         if not max_iters == None:
@@ -65,7 +88,11 @@ class ParisDataSet(data.Dataset):
 
         image = np.asarray(image, np.float32)
         image -= self.mean
+<<<<<<< HEAD
+        image = image.astype(np.float32) / 255.0
+=======
         # image = image.astype(np.float32) / 255.0
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         image = image[:, :, ::-1]  # change to RGB
         img_h, img_w = label.shape
         pad_h = max(self.crop_h - img_h, 0)
@@ -124,10 +151,17 @@ class ParisDataSet(data.Dataset):
 
 
 class ParisValDataSet(data.Dataset):
+<<<<<<< HEAD
+    """
+       ParisDataSet is employed to load val set
+       Args:
+        root: the Paris dataset path,
+=======
     """ 
        ParisDataSet is employed to load val set
        Args:
         root: the Paris dataset path, 
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
          Paris
           ├── gtFine
           ├── leftImg8bit
@@ -136,12 +170,20 @@ class ParisValDataSet(data.Dataset):
     """
 
     def __init__(self, root='',
+<<<<<<< HEAD
+                 list_path='',  std=(128, 128, 128),
+=======
                  list_path='',
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
                  f_scale=1, mean=(128, 128, 128), ignore_label=0):
         self.root = root
         self.list_path = list_path
         self.ignore_label = ignore_label
         self.mean = mean
+<<<<<<< HEAD
+        self.std = std
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         self.f_scale = f_scale
         self.img_ids = [i_id.strip() for i_id in open(list_path)]
         self.files = []
@@ -177,7 +219,11 @@ class ParisValDataSet(data.Dataset):
         image = np.asarray(image, np.float32)
 
         image -= self.mean
+<<<<<<< HEAD
+        image = image.astype(np.float32) / 255.0
+=======
         # image = image.astype(np.float32) / 255.0
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
 
@@ -195,12 +241,20 @@ class ParisTestDataSet(data.Dataset):
     """
 
     def __init__(self, root='',
+<<<<<<< HEAD
+                 list_path='', mean=(128, 128, 128), std=(128, 128, 128),
+=======
                  list_path='', mean=(128, 128, 128),
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
                  ignore_label=0):
         self.root = root
         self.list_path = list_path
         self.ignore_label = ignore_label
         self.mean = mean
+<<<<<<< HEAD
+        self.std = std
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         self.img_ids = [i_id.strip() for i_id in open(list_path)]
         self.files = []
         for name in self.img_ids:
@@ -227,17 +281,29 @@ class ParisTestDataSet(data.Dataset):
         datafiles = self.files[index]
 
         image = cv2.imread(datafiles["img"], cv2.IMREAD_COLOR)
+<<<<<<< HEAD
+        label = cv2.imread(datafiles["label"], cv2.IMREAD_GRAYSCALE)
+
+=======
         ''''''
         label = cv2.imread(datafiles["label"], cv2.IMREAD_GRAYSCALE)
         ''''''
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         name = datafiles["name"]
         image = np.asarray(image, np.float32)
         size = image.shape
 
         image -= self.mean
+<<<<<<< HEAD
+        image = image.astype(np.float32) / 255.0
+        image = image[:, :, ::-1]  # change to RGB
+        image = image.transpose((2, 0, 1))  # HWC -> CHW
+
+=======
         # image = image.astype(np.float32) / 255.0
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         return image.copy(), np.array(size), name, label.copy()
 
 
@@ -278,7 +344,11 @@ class ParisTrainInform:
         Args:
         fileName: train set file that stores the image locations
         trainStg: if processing training or validation data
+<<<<<<< HEAD
+
+=======
         
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         return: 0 if successful
         """
         global_hist = np.zeros(self.classes, dtype=np.float32)
@@ -348,4 +418,8 @@ class ParisTrainInform:
             data_dict['classWeights'] = self.classWeights
             pickle.dump(data_dict, open(self.inform_data_file, "wb"))
             return data_dict
+<<<<<<< HEAD
         return None
+=======
+        return None
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde

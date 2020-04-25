@@ -1,7 +1,10 @@
 import os, sys
 import cv2
 import numpy as np
+<<<<<<< HEAD
+=======
 
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 from multiprocessing import Pool
 # import copy_reg
 import copyreg
@@ -90,6 +93,10 @@ def get_iou(data_list, class_num, save_path=None):
     pool.close()
     pool.join()
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     for m in m_list:
         ConfM.addM(m)
 
