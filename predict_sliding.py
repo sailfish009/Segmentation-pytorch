@@ -2,20 +2,17 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import os
-import scipy.ndimage as nd
 from math import ceil
-from PIL import Image as PILImage
 from builders.model_builder import build_model
 from builders.dataset_builder import build_dataset_test
 from tools.utils import save_predict
-from tools.convert_state import convert_state_dict
-import matplotlib.pyplot as plt
 from argparse import ArgumentParser
 import torch.backends.cudnn as cudnn
-import torch.nn as nn
-import cv2
 from tqdm import tqdm
-from tools.metric import get_iou
+from tools.SegmentationMetric import SegmentationMetric
+from tools.SegMetric import pixel_accuracy, mean_accuracy, mean_IU, frequency_weighted_IU
+
+
 
 def pad_image(img, target_size):
     """Pad an image up to the target size."""
@@ -36,13 +33,14 @@ def pad_label(img, target_size):
 #滑动窗口法
 #image.shape(1,3,1024,2048)、tile_size=(512,512)、classes=3、flip=True、recur=1
 #image:需要预测的图片(1,3,3072,3328);tile_size:小方块大小;
-<<<<<<< HEAD
 def predict_sliding(net, image, tile_size, classes):
-=======
-def predict_sliding(net, image, tile_size, classes):    
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     total_batches = len(image)
-    mIOU_val, per_class_iu = [], []
+    Miou_list = []
+    Iou_list = []
+    Acc_list = []
+    Pa_list = []
+    Mpa_list = []
+    Fmiou_list = []
     pbar = tqdm(iterable=enumerate(image), total=total_batches, desc='Predicting')
     for i, (input, size, name, gt) in pbar:
         image_size = input.shape	#(1,3,3328,3072)
@@ -69,18 +67,33 @@ def predict_sliding(net, image, tile_size, classes):
                 padded_label = pad_label(label, tile_size)
                 # plt.imshow(padded_img)
                 # plt.show()
-                data_list = []
+
                 #将扣下来的部分传入网络，网络输出概率图。
                 with torch.no_grad():
                     input_var = Variable(torch.from_numpy(padded_img)).cuda()
                     padded_prediction = net(input_var)
-                    # 计算miou
+
                     torch.cuda.synchronize()
-                    output = padded_prediction.cpu().data[0].numpy()
                     gt_padded = np.asarray(padded_label[0], dtype=np.uint8)
+
+                    output = padded_prediction.cpu().data[0].numpy()
                     output = output.transpose(1, 2, 0)
                     output = np.asarray(np.argmax(output, axis=2), dtype=np.uint8)
-                    data_list.append([gt_padded.flatten(), output.flatten()])
+
+                    # 计算miou
+                    metric = SegmentationMetric(numClass=args.classes)
+                    metric.addBatch(imgPredict=output, imgLabel=gt_padded)
+                    miou, iou = metric.meanIntersectionOverUnion()
+                    fmiou = metric.Frequency_Weighted_Intersection_over_Union()
+                    pa = metric.pixelAccuracy()
+                    mpa = metric.meanPixelAccuracy()
+                    Miou_list.append(miou)
+                    Fmiou_list.append(fmiou)
+                    Pa_list.append(pa)
+                    Mpa_list.append(mpa)
+                    iou = np.array(iou)
+                    Iou_list.append(iou)
+
 
                 if isinstance(padded_prediction, list):
                     padded_prediction = padded_prediction[0]	#shape(1,3,512,512)
@@ -91,14 +104,6 @@ def predict_sliding(net, image, tile_size, classes):
                 count_predictions[y1:y2, x1:x2] += 1	#窗口区域内的计数矩阵加1
                 full_probs[y1:y2, x1:x2] += prediction  #窗口区域内的全概率矩阵叠加预测结果
 
-                # 计算miou
-<<<<<<< HEAD
-                # print(data_list)
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
-                meanIoU0, per_class_iu0 = get_iou(data_list, args.classes)
-                mIOU_val.append(meanIoU0)
-                per_class_iu.append(per_class_iu0)
 
 
         # average the predictions in the overlapping regions
@@ -112,12 +117,19 @@ def predict_sliding(net, image, tile_size, classes):
         save_predict(full_probs, gt, name[0], args.dataset, args.save_seg_dir,
                      output_grey=False, output_color=True, gt_color=True)
         # return full_probs	#返回整张图的平均概率 shape(1024,2048,3)
-    return mIOU_val, per_class_iu
 
-<<<<<<< HEAD
-=======
-    
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
+    miou = np.mean(Miou_list)
+    fmiou = np.mean(Fmiou_list)
+    pa = np.mean(Pa_list)
+    mpa = np.mean(Mpa_list)
+    Iou_list = np.asarray(Iou_list)
+    iou = np.mean(Iou_list, axis=0)
+    cls_iu = dict(zip(range(args.classes), iou))
+    return miou, cls_iu, fmiou, pa, mpa
+
+
+
+
 
 
 def test_model(args):
@@ -157,13 +169,11 @@ def test_model(args):
             print("=====> no checkpoint found at '{}'".format(args.checkpoint))
             raise FileNotFoundError("no checkpoint found at '{}'".format(args.checkpoint))
 
-    print("=====> beginning testing")
-<<<<<<< HEAD
-    mIOU_val, per_class_iu = predict_sliding(model.eval(), image = testLoader, tile_size=(args.tile_size, args.tile_size), classes=args.classes)
-=======
-    mIOU_val, per_class_iu = predict_sliding(model.eval(), image = testLoader, tile_size=(512,512), classes=args.classes)
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
-    print('Miou is: {:.4f}'.format(sum(mIOU_val)/len(mIOU_val)))
+    # print("=====> beginning testing")
+    miou, class_iou, fmiou, pa, mpa = predict_sliding(model.eval(), image = testLoader, tile_size=(args.tile_size, args.tile_size), classes=args.classes)
+    print('Miou is: {:.4f}\nClass iou is: {}\nFMiou is: {:.4f}\nPa is: {:.4f}\nMpa is: {:.4f}'.format(miou, class_iou, fmiou, pa, mpa))
+
+
 
 
 if __name__ == '__main__':
@@ -173,11 +183,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=1, help="the number of parallel threads")
     parser.add_argument('--batch_size', type=int, default=1,
                         help=" the batch_size is set to 1 when evaluating or testing")
-<<<<<<< HEAD
     parser.add_argument('--tile_size', type=int, default=512,
                         help=" the tile_size is when evaluating or testing")
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     parser.add_argument('--checkpoint', type=str,
                         default='',
                         help="use the file to load the checkpoint for evaluating or testing ")
@@ -191,22 +198,15 @@ if __name__ == '__main__':
     args.save_seg_dir = os.path.join(args.save_seg_dir, args.dataset, 'predict_sliding', save_dirname)
 
     if args.dataset == 'cityscapes':
-<<<<<<< HEAD
         args.classes = 19
-=======
-        args.classes = 3
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     elif args.dataset == 'camvid':
         args.classes = 11
     elif args.dataset == 'paris':
         args.classes = 3
     elif args.dataset == 'austin':
         args.classes = 2
-<<<<<<< HEAD
     elif args.dataset == 'road':
         args.classes = 2
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     else:
         raise NotImplementedError(
             "This repository now supports two datasets: cityscapes and camvid, %s is not included" % args.dataset)

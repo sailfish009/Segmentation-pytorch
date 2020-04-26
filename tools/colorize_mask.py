@@ -15,11 +15,8 @@ paris_palette = [255, 255, 255, 0, 0, 255, 255, 0, 0]
 
 austin_palette = [0, 0, 0, 255, 255, 255]
 
-<<<<<<< HEAD
 road_palette = [0, 0, 0, 255, 255, 255]
 
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 zero_pad = 256 * 3 - len(cityscapes_palette)
 for i in range(zero_pad):
     cityscapes_palette.append(0)
@@ -58,7 +55,6 @@ def austin_colorize_mask(mask):
 
     return new_mask
 
-<<<<<<< HEAD
 def road_colorize_mask(mask):
     # mask: numpy array of the mask
     new_mask = Image.fromarray(mask.astype(np.uint8)).convert('P')
@@ -66,8 +62,6 @@ def road_colorize_mask(mask):
 
     return new_mask
 
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 class VOCColorize(object):
     def __init__(self, n=22):
         self.cmap = voc_color_map(22)

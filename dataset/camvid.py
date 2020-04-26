@@ -68,11 +68,7 @@ class CamVidDataSet(data.Dataset):
         image = np.asarray(image, np.float32)
 
         image -= self.mean
-<<<<<<< HEAD
         image = image.astype(np.float32) / 255.0
-=======
-        # image = image.astype(np.float32) / 255.0
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         image = image[:, :, ::-1]  # change to RGB
         img_h, img_w = label.shape
         pad_h = max(self.crop_h - img_h, 0)
@@ -153,11 +149,7 @@ class CamVidValDataSet(data.Dataset):
         image = np.asarray(image, np.float32)
 
         image -= self.mean
-<<<<<<< HEAD
         image = image.astype(np.float32) / 255.0
-=======
-        # image = image.astype(np.float32) / 255.0
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         image = image[:, :, ::-1]  # revert to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
 
@@ -206,11 +198,7 @@ class CamVidTestDataSet(data.Dataset):
 
         size = image.shape
         image -= self.mean
-<<<<<<< HEAD
         image = image.astype(np.float32) / 255.0
-=======
-        # image = image.astype(np.float32) / 255.0
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
 

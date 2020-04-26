@@ -4,24 +4,15 @@ import glob
 from tqdm import tqdm
 
 '''执行之前确认以下两个dir的路径是否正确'''
-<<<<<<< HEAD
 input_dir = "/media/ding/Data/datasets/paris/paris_origin_107" # 需要裁剪的大图目录
 output_dir = "/media/ding/Data/datasets/paris/512_image_107"  # 裁剪好的小图目录
-=======
-input_dir = "/media/ding/Data/datasets/paris/paris_origin" # 需要裁剪的大图目录
-output_dir = "/media/ding/Data/datasets/paris"  # 裁剪好的小图目录
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
 # image_dir = "/media/ding/Data/datasets/paris/paris/*_image.png"
 image_dir = input_dir +"/*_image.png"
 image_list = glob.glob(image_dir)
 image_list.sort()
 num_data = len(image_list)
-<<<<<<< HEAD
 image_list_train, image_list_val, image_list_test = image_list[:int(0.8*num_data)], image_list[int(0.8*num_data):], image_list[int(0.8*num_data):]
-=======
-image_list_train, image_list_val, image_list_test = image_list[:int(0.8*num_data)], image_list[int(0.8*num_data):int(0.85*num_data)], image_list[int(0.85*num_data):]
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 # print(image_list[0].split('/')[-1].split('.')[0] + '_gray.png')
 # print(image_list[:3])
 def cut_image(mode = 'train', image_list = None):
@@ -35,11 +26,7 @@ def cut_image(mode = 'train', image_list = None):
         label = Image.open(label_path)
         # 图片尺寸
         size = img.size
-<<<<<<< HEAD
         cropsize = 512
-=======
-        cropsize = 1024
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
         if(size[0] % cropsize > 0):
             num_w = int(size[0] / cropsize) + 1
@@ -69,10 +56,7 @@ def cut_image(mode = 'train', image_list = None):
 
 #austin分割数据集
 # '''执行之前确认以下两个dir的路径是否正确'''
-<<<<<<< HEAD
 
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 # input_dir = "/media/ding/Data/datasets/遥感数据集/遥感房屋分割数据集/AerialImageDataset/train/images" # 需要裁剪的大图目录
 # output_dir = "/media/ding/Data/datasets/austin"  # 裁剪好的小图目录
 #
@@ -122,7 +106,6 @@ def cut_image(mode = 'train', image_list = None):
 #                 # print(output_dir + '/{}/{}_image/austin{}_{}_{}.tif'.format(mode, cropsize, image_num, j, i))
 #                 crop_image.save(output_dir + '/{}/{}_image/austin{}_{}_{}.png'.format(mode, cropsize, image_num, j, i))
 #                 crop_label.save(output_dir + '/{}/{}_label/austin{}_{}_{}.png'.format(mode, cropsize, image_num, j, i))
-<<<<<<< HEAD
 
 
 '''执行之前确认以下两个dir的路径是否正确'''
@@ -186,9 +169,6 @@ def cut_image(mode = 'train', image_list = None):
 #                 crop_label.save(output_dir + '/{}/{}_label/road{}_{}_{}.png'.format(mode, cropsize, image_num, j, i))
 
 
-=======
-#
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 if __name__ == '__main__':
     cut_image('train', image_list_train)
     cut_image('val', image_list_val)

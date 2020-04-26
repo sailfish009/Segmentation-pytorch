@@ -176,11 +176,7 @@ class U_Net(nn.Module):
         self.inplanes = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
-<<<<<<< HEAD
         self.bn1 = nn.BatchNorm2d(64)   
-=======
-        self.bn1 = nn.BatchNorm2d(64)
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
@@ -357,11 +353,7 @@ def resnet152(pretrained=False, **kwargs):
         return cnn
 
 
-<<<<<<< HEAD
 def UNet_res_ori(backbone='resnet18', pretrained=True, classes=3):
-=======
-def UNet_res(backbone='resnet18', pretrained=True, classes=3):
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     if backbone == 'resnet18':
         model = resnet18(pretrained=pretrained, classes=classes)
     elif backbone == 'resnet34':
@@ -377,11 +369,7 @@ def UNet_res(backbone='resnet18', pretrained=True, classes=3):
 
 """print layers and params of network"""
 if __name__ == '__main__':
-<<<<<<< HEAD
     model = UNet_res_ori(backbone='resnet50', pretrained=True, classes=2)
-=======
-    model = UNet_res(backbone='resnet50', pretrained=True, classes=2)
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     summary(model, (3,512,512), device='cpu')
 
     total_paramters = netParams(model)

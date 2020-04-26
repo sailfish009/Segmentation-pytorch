@@ -12,21 +12,14 @@ from argparse import ArgumentParser
 from builders.model_builder import build_model
 from builders.dataset_builder import build_dataset_train
 from tools.utils import setup_seed, init_weight, netParams
-from tools.metric import get_iou
-<<<<<<< HEAD
 from tools.loss import CrossEntropyLoss2d, ProbOhemCrossEntropy2d, BinCrossEntropyLoss2d
-=======
-from tools.loss import CrossEntropyLoss2d, ProbOhemCrossEntropy2d
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 from tools.lr_scheduler import WarmupPolyLR, poly_learning_rate
 from tqdm import tqdm
+from tools.SegMetric import pixel_accuracy, mean_accuracy, mean_IU, frequency_weighted_IU
+from tools.SegmentationMetric import SegmentationMetric
 from tools.convert_state import convert_state_dict
 from time import strftime, localtime
-<<<<<<< HEAD
-from cupy.core.dlpack import toDlpack
-from torch.utils.dlpack import from_dlpack
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
+
 date = strftime("%Y-%m-%d_%H:%M:%S", localtime())
 print(date)
 
@@ -44,25 +37,45 @@ def val(args, val_loader, model):
     model.eval()
     total_batches = len(val_loader)
 
-    data_list = []
+    Miou_list = []
+    Iou_list = []
+    Acc_list = []
+    Pa_list = []
+    Mpa_list = []
+    Fmiou_list = []
     pbar = tqdm(iterable=enumerate(val_loader), total=total_batches, desc='Val')
     for i, (input, label, size, name) in pbar:
         with torch.no_grad():
-<<<<<<< HEAD
             input_var = Variable(input).cuda().float()
-=======
-            input_var = Variable(input).cuda()
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         output = model(input_var)
 
         output = output.cpu().data[0].numpy()
         gt = np.asarray(label[0].numpy(), dtype=np.uint8)
         output = output.transpose(1, 2, 0)
         output = np.asarray(np.argmax(output, axis=2), dtype=np.uint8)
-        data_list.append([gt.flatten(), output.flatten()])
 
-    meanIoU, per_class_iu = get_iou(data_list, args.classes, save_path=None)
-    return meanIoU, per_class_iu
+        #metric
+        metric = SegmentationMetric(numClass=args.classes)
+        metric.addBatch(imgPredict=output, imgLabel=gt)
+        miou, iou = metric.meanIntersectionOverUnion()
+        fmiou = metric.Frequency_Weighted_Intersection_over_Union()
+        pa = metric.pixelAccuracy()
+        mpa = metric.meanPixelAccuracy()
+        Miou_list.append(miou)
+        Fmiou_list.append(fmiou)
+        Pa_list.append(pa)
+        Mpa_list.append(mpa)
+        iou = np.array(iou)
+        Iou_list.append(iou)
+
+    miou = np.mean(Miou_list)
+    fmiou = np.mean(Fmiou_list)
+    pa = np.mean(Pa_list)
+    mpa = np.mean(Mpa_list)
+    Iou_list = np.asarray(Iou_list)
+    iou = np.mean(Iou_list, axis=0)
+    cls_iu = dict(zip(range(args.classes), iou))
+    return miou, cls_iu, fmiou, pa, mpa
 
 def train(args, train_loader, model, criterion, optimizer, epoch):
     """
@@ -80,11 +93,7 @@ def train(args, train_loader, model, criterion, optimizer, epoch):
     total_batches = len(train_loader)
 
     st = time.time()
-<<<<<<< HEAD
     pbar = tqdm(iterable=enumerate(train_loader), total=total_batches, desc='Epoch {}/{}'.format(epoch, args.max_epochs))
-=======
-    pbar = tqdm(iterable=enumerate(train_loader), total=total_batches, desc='Epoch {}'.format(epoch))
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     for iteration, batch in pbar:
         args.per_iter = total_batches
         args.max_iter = args.max_epochs * args.per_iter
@@ -94,10 +103,7 @@ def train(args, train_loader, model, criterion, optimizer, epoch):
         lr = optimizer.param_groups[0]['lr']
 
         images, labels, _, _ = batch
-<<<<<<< HEAD
 
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         images = Variable(images).cuda()
         labels = Variable(labels.long()).cuda()
 
@@ -194,15 +200,11 @@ def train_model(args):
         # min_kept = int(args.batch_size // len(args.gpus) * h * w // 16)
         # criteria = ProbOhemCrossEntropy2d(ignore_label=ignore_label, thresh=0.7, min_kept=min_kept, use_weight=False)
     elif args.dataset == 'austin':
-<<<<<<< HEAD
         criteria = BinCrossEntropyLoss2d(weight=weight)
         # criteria = nn.CrossEntropyLoss()
     elif args.dataset == 'road':
         criteria = CrossEntropyLoss2d(weight=weight, ignore_label=ignore_label)
         # criteria = BinCrossEntropyLoss2d(weight=weight)
-=======
-        criteria = CrossEntropyLoss2d(weight=weight, ignore_label=ignore_label)
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         # criteria = nn.CrossEntropyLoss()
     else:
         raise NotImplementedError(
@@ -246,12 +248,8 @@ def train_model(args):
         logger = open(logFileLoc, 'a')
     else:
         logger = open(logFileLoc, 'w')
-<<<<<<< HEAD
         logger.write("Parameters: %s Seed: %s\n %s\n" % (str(total_paramters/ 1e6), GLOBAL_SEED, args))
-=======
-        logger.write("Parameters: %s Seed: %s\n %s" % (str(total_paramters/ 1e6), GLOBAL_SEED, args))
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
-        logger.write("\n%s\t%s\t\t%s\t\t%s\t\t%s\t\t%s\t\t%s" % ('Epoch', 'lr', 'Loss(Tr)', 'mIOU (val)', 'Class-0', 'Class-1', 'Class-2'))
+        logger.write("\n%s\t%s\t\t\t%s\t\t%s\t%s\t%s\t%s\t%s\t%s" % ('Epoch', 'lr', '  Loss', '  Pa', ' Mpa', ' mIOU', 'Class0', 'Class1', 'Class2'))
     logger.flush()
 
     # define optimization criteria
@@ -270,7 +268,6 @@ def train_model(args):
     elif args.dataset == 'austin':
         optimizer = torch.optim.SGD(
             filter(lambda p: p.requires_grad, model.parameters()), args.lr, momentum=0.9, weight_decay=1e-4)
-<<<<<<< HEAD
 
     elif args.dataset == 'road':
         optimizer = torch.optim.SGD(
@@ -279,12 +276,6 @@ def train_model(args):
     epoches = []
     mIOU_val_list = []
     min_loss = float('inf')
-=======
-    lossTr_list = []
-    epoches = []
-    mIOU_val_list = []
-
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     print('***********************************************\n'
           '*******        Begining traing          *******\n'
           '***********************************************')
@@ -296,41 +287,25 @@ def train_model(args):
         # validation
         if (epoch % args.val_epochs == 0 and args.train_val == 'True') or epoch == (args.max_epochs - 1) :
             epoches.append(epoch)
-            mIOU_val, per_class_iu = val(args, valLoader, model)
-            mIOU_val_list.append(mIOU_val)
+            miou, iou, fmiou, pa, mpa = val(args, valLoader, model)
+            mIOU_val_list.append(miou)
             # record train information
             if args.classes == 3:
-<<<<<<< HEAD
-                logger.write("\n%d\t%.6f\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1], per_class_iu[2]))
+                logger.write("\n %d\t\t%.6f\t%.5f\t\t%.4f\t%0.4f\t%0.4f\t%0.4f\t%0.4f\t%0.4f" % (epoch, lr, lossTr, fmiou, pa, miou, iou[0], iou[1], iou[2]))
             elif args.classes == 2:
-                logger.write("\n%d\t%.6f\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1]))
+                logger.write("\n %d\t\t%.6f\t%.5f\t\t%.4f\t%0.4f\t%0.4f\t%0.4f\t%0.4f" % (epoch, lr, lossTr, fmiou, pa, miou, iou[0], iou[1]))
             else:
-                for i in per_class_iu:
-                    logger.write("\n%d\t%.6f\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1]))
-=======
-                logger.write("\n%d\t%.5f\t\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1], per_class_iu[2]))
-            elif args.classes == 2:
-                logger.write("\n%d\t%.5f\t\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1]))
-            else:
-                for i in per_class_iu:
-                    logger.write("\n%d\t\t%.5f\t\t%.5f\t\t\t%.4f\t\t\t%0.4f\t\t%0.4f" % (epoch, lr, lossTr, mIOU_val, per_class_iu[0], per_class_iu[1]))
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
+                for i in iou:
+                    logger.write("\n %d\t\t%.6f\t%.5f\t\t%.4f\t%0.4f\t%0.4f\t%0.4f\t%0.4f" % (epoch, lr, lossTr, fmiou, pa, miou, iou[0], iou[1]))
             logger.flush()
-            print("Epoch %d\tTrain Loss = %.4f\t mIOU(val) = %.4f\t lr= %.5f\n" % (epoch,
-                                                                                 lossTr,
-                                                                                 mIOU_val, lr))
+            print("Epoch %d\tTrain Loss = %.4f\t mIOU(val) = %.4f\t lr= %.5f\n" % (epoch, lossTr, miou, lr))
         else:
             # record train information
-<<<<<<< HEAD
-            logger.write("\n%d\t%.6f\t%.5f" % (epoch, lr, lossTr))
-=======
-            logger.write("\n%d\t%.5f\t\t%.5f" % (epoch, lr, lossTr))
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
+            logger.write("\n%d\t%.6f\t\t%.5f" % (epoch, lr, lossTr))
             logger.flush()
             print("Epoch %d\tTrain Loss = %.4f\t lr= %.6f\n" % (epoch, lossTr, lr))
 
         # save the model
-<<<<<<< HEAD
         model_file_name = args.savedir + '/model_' + str(epoch) + '.pth'
         state = {"epoch": epoch, "model": model.state_dict()}
 
@@ -341,15 +316,6 @@ def train_model(args):
             torch.save(state, model_file_name)
         # elif not epoch % args.save_epochs:
         #     torch.save(state, model_file_name)
-=======
-        model_file_name = args.savedir + '/model_' + str(epoch + 1) + '.pth'
-        state = {"epoch": epoch, "model": model.state_dict()}
-
-        if epoch >= args.max_epochs - args.val_epochs:
-            torch.save(state, model_file_name)
-        elif not epoch % args.save_epochs:
-            torch.save(state, model_file_name)
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 
         # draw plots for visualization
         if epoch % args.val_epochs == 0 or epoch == (args.max_epochs - 1):
@@ -384,11 +350,7 @@ if __name__ == '__main__':
     start = timeit.default_timer()
     parser = ArgumentParser()
     parser.add_argument('--model', default="DABNet", help="model name in model_builder.py")
-<<<<<<< HEAD
     parser.add_argument('--dataset', default="paris", help="dataset: road paris austin cityscapes or camvid ")
-=======
-    parser.add_argument('--dataset', default="paris", help="dataset: paris austin cityscapes or camvid ")
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     parser.add_argument('--train_type', type=str, default="train",
                         help="ontrain for training on train set, ontrainval for training on train+val set")
     parser.add_argument('--train_val', type=str, default='True', help="train with val")
@@ -398,15 +360,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=8, help="the batch size is set to 16 for 2 GPUs")
     parser.add_argument('--num_loss', type=int, default=1, help="the number of loss for train")
     parser.add_argument('--val_epochs', type=int, default=10, help=" the number of val of epochs")
-<<<<<<< HEAD
     parser.add_argument('--save_epochs', type=int, default=40, help=" the number of save checkpoint of epochs")
     parser.add_argument('--random_mirror', type=bool, default=True, help="input image random mirror")
     parser.add_argument('--random_scale', type=bool, default=True, help="input image resize 0.5 to 2")
-=======
-    parser.add_argument('--save_epochs', type=int, default=1, help=" the number of save checkpoint of epochs")
-    parser.add_argument('--random_mirror', type=bool, default=False, help="input image random mirror")
-    parser.add_argument('--random_scale', type=bool, default=False, help="input image resize 0.5 to 2")
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     parser.add_argument('--num_workers', type=int, default=4, help=" the number of parallel threads")
     parser.add_argument('--savedir', default="./checkpoint/", help="directory to save the model snapshot")
     parser.add_argument('--resume', type=str, default="",
@@ -434,14 +390,11 @@ if __name__ == '__main__':
         # args.input_size = '1024,1024'
         args.input_size = '512,512'
         ignore_label = 2
-<<<<<<< HEAD
     elif args.dataset == 'road':
         args.classes = 2
         # args.input_size = '1024,1024'
         args.input_size = '500,500'
         ignore_label = 2
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
     else:
         raise NotImplementedError(
             "This repository now supports two datasets: cityscapes and camvid, %s is not included" % args.dataset)

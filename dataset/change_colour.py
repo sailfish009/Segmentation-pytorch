@@ -6,16 +6,12 @@ i = 1
 j = 1
 
 #获取指定目录下的所有图片
-<<<<<<< HEAD
 # ##paris
-=======
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 # image_dir = "/media/ding/Data/datasets/pairs/paris/*labels.png"
 # image_list = glob.glob(image_dir)
 # print(len(image_list))
 # print(image_list[0].split('/')[-1].split('.')[0] + '_gray.png')
 
-<<<<<<< HEAD
 # ##austin
 # image_dir = "/media/ding/Data/datasets/遥感数据集/遥感房屋分割数据集/AerialImageDataset/train/gt/*.tif"
 # image_list = glob.glob(image_dir)
@@ -23,9 +19,6 @@ j = 1
 # ##road
 # image_dir = "/media/ding/Data/datasets/massachusetts-roads-dataset/road_segmentation_ideal/training/output/*.png"  # train
 image_dir = "/media/ding/Data/datasets/massachusetts-roads-dataset/road_segmentation_ideal/testing/output/*.png"
-=======
-image_dir = "/media/ding/Data/datasets/遥感数据集/遥感房屋分割数据集/AerialImageDataset/train/gt/*.tif"
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
 image_list = glob.glob(image_dir)
 
 for cnt,pic in tqdm(enumerate(image_list)):
@@ -52,7 +45,6 @@ for cnt,pic in tqdm(enumerate(image_list)):
             # if(data == 255):
             #     img.putpixel((i, j), 1)
 
-<<<<<<< HEAD
             #roaD分割数据集
             if(data == 255):
                 img.putpixel((i, j), 1)
@@ -63,12 +55,3 @@ for cnt,pic in tqdm(enumerate(image_list)):
 
     # img.save("/media/ding/Data/datasets/massachusetts-roads-dataset/road_segmentation_ideal/training/output/" + image_list[cnt].split('/')[-1].split('.')[0] + '_gray.png') #保存修改像素点后的图片 training
     img.save("/media/ding/Data/datasets/massachusetts-roads-dataset/road_segmentation_ideal/testing/output/" + image_list[cnt].split('/')[-1].split('.')[0] + '_gray.png')
-=======
-            #cityscapes分割数据集
-            if(data == 255):
-                img.putpixel((i, j), 0)
-
-
-    # img.save("/media/ding/Data/datasets/pairs/paris/" + image_list[cnt].split('/')[-1].split('.')[0] + '_gray.png')#保存修改像素点后的图片
-    img.save("/media/ding/Data/datasets/遥感数据集/遥感房屋分割数据集/AerialImageDataset/train/gt/" + image_list[cnt].split('/')[-1].split('.')[0] + '_gray.png')#保存修改像素点后的图片
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde

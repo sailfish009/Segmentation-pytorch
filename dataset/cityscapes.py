@@ -66,11 +66,7 @@ class CityscapesDataSet(data.Dataset):
         image = np.asarray(image, np.float32)
 
         image -= self.mean
-<<<<<<< HEAD
         image = image.astype(np.float32) / 255.0
-=======
-        # image = image.astype(np.float32) / 255.0
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         image = image[:, :, ::-1]  # change to RGB
         img_h, img_w = label.shape
         pad_h = max(self.crop_h - img_h, 0)
@@ -126,15 +122,9 @@ class CityscapesValDataSet(data.Dataset):
         self.files = []
         for name in self.img_ids:
             img_file = osp.join(self.root, name.split()[0])
-<<<<<<< HEAD
             # print(img_file)
             label_file = osp.join(self.root, name.split()[1])
             # print(label_file)
-=======
-            print(img_file)
-            label_file = osp.join(self.root, name.split()[1])
-            print(label_file)
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
             # image_name = name.strip().split()[0].strip().split('/', 3)[3].split('.')[0]
             image_name = name.strip().split('/')[-1].split('.')[0]
             # print("image_name:  ",image_name)
@@ -163,11 +153,7 @@ class CityscapesValDataSet(data.Dataset):
         image = np.asarray(image, np.float32)
 
         image -= self.mean
-<<<<<<< HEAD
         image = image.astype(np.float32) / 255.0
-=======
-        # image = image.astype(np.float32) / 255.0
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
 
@@ -216,11 +202,7 @@ class CityscapesTestDataSet(data.Dataset):
         size = image.shape
 
         image -= self.mean
-<<<<<<< HEAD
         image = image.astype(np.float32) / 255.0
-=======
-        # image = image.astype(np.float32) / 255.0
->>>>>>> 60b121b66c11a06ff5e6ff160b220c96fd746bde
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
         return image.copy(), np.array(size), name
