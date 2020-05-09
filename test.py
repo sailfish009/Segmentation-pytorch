@@ -15,6 +15,7 @@ from tools.metric import get_iou
 import glob
 from tqdm import tqdm
 from tools.convert_state import convert_state_dict
+from tools.SegmentationMetric import SegmentationMetric
 
 
 def test(args, test_loader, model):
@@ -28,9 +29,13 @@ def test(args, test_loader, model):
     model.eval()
     total_batches = len(test_loader)
 
-    data_list = []
+    Miou_list = []
+    Iou_list = []
+    Pa_list = []
+    Mpa_list = []
+    Fmiou_list = []
     pbar = tqdm(iterable=enumerate(test_loader), total=total_batches, desc='Valing')
-    for i, (input, size, name, label) in pbar:
+    for i, (input, gt, size, name) in pbar:
         with torch.no_grad():
             input_var = Variable(input).cuda()
         start_time = time.time()
@@ -39,19 +44,37 @@ def test(args, test_loader, model):
         time_taken = time.time() - start_time
         pbar.set_postfix(cost_time='%.3f' % time_taken)
         output = output.cpu().data[0].numpy()
-        gt = np.asarray(label[0].numpy(), dtype=np.uint8)
         output = output.transpose(1, 2, 0)
         output = np.asarray(np.argmax(output, axis=2), dtype=np.uint8)
-        data_list.append([gt.flatten(), output.flatten()])
+        gt = np.asarray(gt[0], dtype=np.uint8)
+
+        # 计算miou
+        metric = SegmentationMetric(numClass=args.classes)
+        metric.addBatch(imgPredict=output, imgLabel=gt)
+        miou, iou = metric.meanIntersectionOverUnion()
+        fmiou = metric.Frequency_Weighted_Intersection_over_Union()
+        pa = metric.pixelAccuracy()
+        mpa = metric.meanPixelAccuracy()
+        Miou_list.append(miou)
+        Fmiou_list.append(fmiou)
+        Pa_list.append(pa)
+        Mpa_list.append(mpa)
+        iou = np.array(iou)
+        Iou_list.append(iou)
 
         # save the predicted image
         if args.save:
             save_predict(output, gt, name[0], args.dataset, args.save_seg_dir,
                          output_grey=False, output_color=True, gt_color=True)
 
-    meanIoU, per_class_iu = get_iou(data_list, args.classes)
-    return meanIoU, per_class_iu
-
+    miou = np.mean(Miou_list)
+    fmiou = np.mean(Fmiou_list)
+    pa = np.mean(Pa_list)
+    mpa = np.mean(Mpa_list)
+    Iou_list = np.asarray(Iou_list)
+    iou = np.mean(Iou_list, axis=0)
+    cls_iu = dict(zip(range(args.classes), iou))
+    return miou, cls_iu, fmiou, pa, mpa
 
 def test_model(args):
     """
@@ -60,7 +83,7 @@ def test_model(args):
      return: None
     """
     print(args)
-
+    mIOU_val_max = 0
     if args.cuda:
         print("use gpu id: '{}'".format(args.gpus))
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
@@ -94,7 +117,7 @@ def test_model(args):
 
         print("beginning validation")
         print("validation set length: ", len(testLoader))
-        mIOU_val, per_class_iu = test(args, testLoader, model)
+        miou, class_iou, fmiou, pa, mpa = test(args, testLoader, model)
 
     # Get the best test result among the last 10 model records.
     else:
@@ -109,6 +132,7 @@ def test_model(args):
                     name = i.split('/')[-1].split('_')[-1].split('.')[0]
                     check_num.append(int(name))
                 check_num.sort()
+
                 for i in check_num:
                     basename = 'model_' + str(i) + '.pth'
                     resume = os.path.join(dirname, basename)
@@ -116,15 +140,14 @@ def test_model(args):
                     model.load_state_dict(checkpoint['model'])
                     print("beginning test the:" + basename)
                     print("validation set length: ", len(testLoader))
-                    mIOU_val_0, per_class_iu_0 = test(args, testLoader, model)
-                    print('Miou Val is ', mIOU_val_0, per_class_iu_0)
-                    mIOU_val.append(mIOU_val_0)
-                    per_class_iu.append(per_class_iu_0)
+                    miou, class_iou, fmiou, pa, mpa  = test(args, testLoader, model)
+                    print('Miou Val is ',miou)
+                    mIOU_val.append(miou)
+
 
                 # index = list(range(epoch - 19, epoch + 1))[np.argmax(mIOU_val)]
                 index = check_num[np.argmax(mIOU_val)]
-                print("The best mIoU among the models is", index-1)
-                per_class_iu_max = per_class_iu[np.argmax(mIOU_val)]
+                print("The best mIoU among the models is", index)
                 mIOU_val_max = np.max(mIOU_val)
 
             else:
@@ -146,18 +169,6 @@ def test_model(args):
     else:
         logger = open(logFileLoc, 'w')
     logger.write("Max Mean IoU: %.4f" % mIOU_val_max)
-    logger.write("\nMax Per class IoU: ")
-    for i in range(len(per_class_iu_max)):
-        logger.write("%.4f\t" % per_class_iu_max[i])
-
-    logger.write("\n\nPer class IoU:\n")
-    logger.write("Epoch  	Miou  	class0  class1  class2\n")
-    for i in range(len(per_class_iu)):
-        logger.write("{}\t{:.4f}\t".format(i, mIOU_val[i]))
-        for j in range(3):
-            logger.write("{:.4f}\t".format(per_class_iu[i][j]))
-        logger.write("\n")
-
 
     logger.flush()
     logger.close()
@@ -165,17 +176,17 @@ def test_model(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--model', default="UNet", help="model name: Context Guided Network (CGNet)")
-    parser.add_argument('--dataset', default="paris", help="dataset: cityscapes or camvid")
+    parser.add_argument('--model', default="BiSeNet_res101", help="model name: Context Guided Network (CGNet)")
+    parser.add_argument('--dataset', default="camvid", help="dataset: cityscapes or camvid")
     parser.add_argument('--num_workers', type=int, default=4, help="the number of parallel threads")
     parser.add_argument('--batch_size', type=int, default=4,
                         help=" the batch_size is set to 1 when evaluating or testing")
     parser.add_argument('--checkpoint', type=str,
-                        default="checkpoint/paris/UNetbs1gpu1_train/2020-03-30_17:07:00/model_61.pth",
+                        default="/media/ding/Study/graduate/Segmentation_Torch/checkpoint/camvid/BiSeNet_res101bs8gpu1_train/2020-05-05_13:05:57/model_390.pth",
                         help="use the file to load the checkpoint for evaluating or testing ")
     parser.add_argument('--save_seg_dir', type=str, default="result",
                         help="saving path of prediction result")
-    parser.add_argument('--best', action='store_true', default=False, help="Get the best result among last few checkpoints")
+    parser.add_argument('--best', action='store_true', default=True, help="Get the best result among last few checkpoints")
     parser.add_argument('--save', action='store_true', default=True, help="Save the predicted image")
     parser.add_argument('--cuda', default=True, help="run on CPU or GPU")
     parser.add_argument("--gpus", default="0", type=str, help="gpu ids (default: 0)")

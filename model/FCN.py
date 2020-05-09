@@ -105,10 +105,10 @@ class Upsample(nn.Module):
         super(Upsample, self).__init__()
         self.bilinear = bilinear
         self.scale_factor = scale_factor
+        self.inplanes = inplanes
+        self.planes = planes
 
-        self.up = nn.ConvTranspose2d(inplanes, planes, 2, stride=2)
 
-        self.conv1_1 = conv1x1(inplanes, planes)
         self.conv1 = conv3x3(planes, planes)
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
@@ -121,23 +121,25 @@ class Upsample(nn.Module):
         if x2 is not None:
             if self.bilinear:
                 x1 = F.interpolate(x1, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+                x1 = self.conv3(x1)  # 1×1卷积改通道数
+                x1 = self.bn3(x1)
             else:
-                x1 = self.up(x1)
-
-            # input is CHW
-            diffY = x2.size()[2] - x1.size()[2]
-            diffX = x2.size()[3] - x1.size()[3]
-
-            x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-                            diffY // 2, diffY - diffY // 2])
-
+                if self.scale_factor == 2:
+                    # x1 = self.up(x1)
+                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 2, stride=2)(x1)
+                elif self.scale_factor == 8:
+                    # x1 = self.up8(x1)
+                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 8, stride=8)(x1)
+                elif self.scale_factor == 16:
+                    # x1 = self.up16(x1)
+                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 16, stride=16)(x1)
+                elif self.scale_factor == 32:
+                    # x1 = self.up32(x1)
+                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 32, stride=32)(x1)
             # for padding issues, see
             # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
             # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
-            x = torch.cat([x2, x1], dim=1)
-            # x = self.conv(x)
-            x = self.conv3(x)
-            x = self.bn3(x)
+            x = x1 + x2
             identity = x
 
             out = self.conv1(x)
@@ -150,13 +152,22 @@ class Upsample(nn.Module):
             out += identity
 
             out = self.relu(out)
+            return out
         else:
             if self.bilinear:
                 x1 = F.interpolate(x1, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
-                # 改变通道数
-                x1 = self.conv1_1(x1)
+                x1 = self.conv3(x1)  # 1×1卷积改通道数
+                x1 = self.bn3(x1)
             else:
-                x1 = self.up(x1)
+                if self.scale_factor == 2:
+                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 2, stride=2)(x1)
+                elif self.scale_factor == 8:
+                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 8, stride=8)(x1)
+                elif self.scale_factor == 16:
+                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 16, stride=16)(x1)
+                elif self.scale_factor == 32:
+                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 32, stride=32)(x1)
+
             identity = x1
 
             out = self.conv1(x1)
@@ -169,7 +180,7 @@ class Upsample(nn.Module):
             out += identity
 
             out = self.relu(out)
-        return out
+            return out
 
 
 
@@ -194,21 +205,21 @@ class FCN(nn.Module):
                 self.Upsample32 = Upsample(inplanes=512, planes=classes, bilinear=True, scale_factor=32)
             if self.scale == 16:
                 self.Upsample2 = Upsample(inplanes=512, planes=256, bilinear=True, scale_factor=2)
-                self.Upsample16 = Upsample(inplanes=512, planes=classes, bilinear=True, scale_factor=16)
+                self.Upsample16 = Upsample(inplanes=256, planes=classes, bilinear=True, scale_factor=16)
             if self.scale == 8:
-                self.Upsample2_1 = Upsample(inplanes=512, planes=256, bilinear=True, scale_factor=2)
-                self.Upsample2_2 = Upsample(inplanes=512, planes=128, bilinear=True, scale_factor=2)
-                self.Upsample8 = Upsample(inplanes=256, planes=classes, bilinear=True, scale_factor=8)
+                self.Upsample2_1 = Upsample(inplanes=512, planes=256, bilinear=False, scale_factor=2)
+                self.Upsample2_2 = Upsample(inplanes=256, planes=128, bilinear=False, scale_factor=2)
+                self.Upsample8 = Upsample(inplanes=128, planes=classes, bilinear=False, scale_factor=8)
         elif block.__name__ == 'Bottleneck':
             if self.scale == 32:
                 self.Upsample32 = Upsample(inplanes=2048, planes=classes, bilinear=True, scale_factor=32)
             if self.scale == 16:
-                self.Upsample2 = Upsample(inplanes=2048, planes=1024, bilinear=True, scale_factor=2)
-                self.Upsample16 = Upsample(inplanes=1024, planes=classes, bilinear=True, scale_factor=16)
+                self.Upsample2 = Upsample(inplanes=2048, planes=1024, bilinear=False, scale_factor=2)
+                self.Upsample16 = Upsample(inplanes=1024, planes=classes, bilinear=False, scale_factor=16)
             if self.scale == 8:
                 self.Upsample2_1 = Upsample(inplanes=2048, planes=1024, bilinear=True, scale_factor=2)
-                self.Upsample2_2 = Upsample(inplanes=2048, planes=512, bilinear=True, scale_factor=2)
-                self.Upsample8 = Upsample(inplanes=1024, planes=classes, bilinear=True, scale_factor=8)
+                self.Upsample2_2 = Upsample(inplanes=1024, planes=512, bilinear=True, scale_factor=2)
+                self.Upsample8 = Upsample(inplanes=512, planes=classes, bilinear=True, scale_factor=8)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -258,16 +269,13 @@ class FCN(nn.Module):
             output = self.Upsample32(Down4)
             return output
         if self.scale == 16:
-            temp = self.Upsample2(Down4)
-            Down3 = torch.cat([temp, Down3], dim=1)
-            output = self.Upsample16(Down3)
+            temp = self.Upsample2(Down4, Down3)
+            output = self.Upsample16(temp)
             return output
         if self.scale == 8:
-            temp = self.Upsample2_1(Down4)
-            Down3 = torch.cat([temp, Down3], dim=1)
-            temp = self.Upsample2_2(Down3)
-            Down2 = torch.cat([temp, Down2], dim=1)
-            output = self.Upsample8(Down2)
+            temp = self.Upsample2_1(Down4, Down3)
+            temp = self.Upsample2_2(temp, Down2)
+            output = self.Upsample8(temp)
             return output
 
 
@@ -376,17 +384,17 @@ def resnet152(pretrained=False, **kwargs):
         return cnn
 
 
-def FCN_res(backbone='resnet18', pretrained=True, classes=3, scale=2):
+def FCN_res(backbone='resnet18', pretrained=True, classes=3, scale=32):
     if backbone == 'resnet18':
         model = resnet18(pretrained=pretrained, classes=classes, scale=scale)
     elif backbone == 'resnet34':
-        model = resnet34(pretrained=pretrained, classes=classes)
+        model = resnet34(pretrained=pretrained, classes=classes, scale=scale)
     elif backbone == 'resnet50':
-        model = resnet50(pretrained=pretrained, classes=classes)
+        model = resnet50(pretrained=pretrained, classes=classes, scale=scale)
     elif backbone == 'resnet101':
-        model = resnet101(pretrained=pretrained, classes=classes)
+        model = resnet101(pretrained=pretrained, classes=classes, scale=scale)
     elif backbone == 'resnet152':
-        model = resnet152(pretrained=pretrained, classes=classes)
+        model = resnet152(pretrained=pretrained, classes=classes, scale=scale)
     return model
 
 
@@ -405,9 +413,9 @@ if __name__ == '__main__':
 
     # cpu
     input = torch.Tensor(1, 3, 512, 512)
-    model = FCN_res(backbone='resnet18', classes=3, pretrained=True, scale=16)  # scale=[8,16,32]
+    model = FCN_res(backbone='resnet50', classes=3, pretrained=True, scale=8)  # scale=[8,16,32]
     model.eval()
-    print(model)
+    # print(model)
     output = model(input)
     print('FCN_res', output.size())
     summary(model, (3, 512, 512), device='cpu')

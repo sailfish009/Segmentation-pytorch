@@ -67,7 +67,6 @@ class RoadDataSet(data.Dataset):
         image = np.asarray(image, np.float32)
         image -= self.mean
         image = image.astype(np.float32) / 255.0
-        # image = image.astype(np.float32) / self.std
         image = image[:, :, ::-1]  # change to RGB
         img_h, img_w = label.shape
         pad_h = max(self.crop_h - img_h, 0)
@@ -181,7 +180,6 @@ class RoadValDataSet(data.Dataset):
 
         image -= self.mean
         image = image.astype(np.float32) / 255.0
-        # image = image.astype(np.float32) / self.std
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
 
@@ -240,10 +238,9 @@ class RoadTestDataSet(data.Dataset):
 
         image -= self.mean
         image = image.astype(np.float32) / 255.0
-        # image = image.astype(np.float32) / self.std
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
-        return image.copy(), np.array(size), name, label.copy()
+        return image.copy(), label.copy(), np.array(size), name
 
 
 class RoadTrainInform:

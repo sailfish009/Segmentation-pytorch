@@ -1,6 +1,6 @@
 import glob
 def generate_txt(mode = 'train'):
-    filename_list = glob.glob('/media/ding/Data/datasets/paris/512_image_107/{}/512_image/*.png'.format(mode))
+    filename_list = glob.glob('/media/ding/Data/datasets/paris/512_image_107/overlap/{}/512_image/*.png'.format(mode))
     filename_list.sort()
     # print(filename_list)
     if mode == 'train':

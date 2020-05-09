@@ -1,1 +1,3 @@
-python predict.py --dataset austin --model UNet_res --checkpoint /media/ding/Study/graduate/DABNet/checkpoint/austin/UNet_resbs16gpu1_train/2020-04-14_18:45:37/model_60.pth
+python predict.py --dataset camvid \
+                  --model BiSeNet_res101 \
+                  --checkpoint /media/ding/Study/graduate/Segmentation_Torch/checkpoint/camvid/BiSeNet_res101bs8gpu1_train/2020-05-05_13:05:57/model_390.pth

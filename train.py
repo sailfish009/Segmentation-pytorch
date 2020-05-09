@@ -201,11 +201,8 @@ def train_model(args):
         # criteria = ProbOhemCrossEntropy2d(ignore_label=ignore_label, thresh=0.7, min_kept=min_kept, use_weight=False)
     elif args.dataset == 'austin':
         criteria = BinCrossEntropyLoss2d(weight=weight)
-        # criteria = nn.CrossEntropyLoss()
     elif args.dataset == 'road':
-        criteria = CrossEntropyLoss2d(weight=weight, ignore_label=ignore_label)
-        # criteria = BinCrossEntropyLoss2d(weight=weight)
-        # criteria = nn.CrossEntropyLoss()
+        criteria = BinCrossEntropyLoss2d(weight=weight)
     else:
         raise NotImplementedError(
             "This repository now supports two datasets: cityscapes and camvid, %s is not included" % args.dataset)
@@ -249,7 +246,9 @@ def train_model(args):
     else:
         logger = open(logFileLoc, 'w')
         logger.write("Parameters: %s Seed: %s\n %s\n" % (str(total_paramters/ 1e6), GLOBAL_SEED, args))
-        logger.write("\n%s\t%s\t\t\t%s\t\t%s\t%s\t%s\t%s\t%s\t%s" % ('Epoch', 'lr', '  Loss', '  Pa', ' Mpa', ' mIOU', 'Class0', 'Class1', 'Class2'))
+        logger.write("\n%s\t\t%s\t\t%s\t\t%s\t%s\t%s" % ('Epoch', '   lr', '  Loss', '  Pa', ' Mpa', ' mIOU'))
+        for i in range(args.classes):
+            logger.write("\t%s" % ('Class'+str(i)))
     logger.flush()
 
     # define optimization criteria
@@ -275,7 +274,8 @@ def train_model(args):
     lossTr_list = []
     epoches = []
     mIOU_val_list = []
-    min_loss = float('inf')
+    max_miou = 0
+    miou = 0
     print('***********************************************\n'
           '*******        Begining traing          *******\n'
           '***********************************************')
@@ -285,18 +285,14 @@ def train_model(args):
         lossTr_list.append(lossTr)
 
         # validation
-        if (epoch % args.val_epochs == 0 and args.train_val == 'True') or epoch == (args.max_epochs - 1) :
+        if (epoch % args.val_epochs == 0 and args.train_val == 'True') or epoch == (args.max_epochs - 1):
             epoches.append(epoch)
             miou, iou, fmiou, pa, mpa = val(args, valLoader, model)
             mIOU_val_list.append(miou)
             # record train information
-            if args.classes == 3:
-                logger.write("\n %d\t\t%.6f\t%.5f\t\t%.4f\t%0.4f\t%0.4f\t%0.4f\t%0.4f\t%0.4f" % (epoch, lr, lossTr, fmiou, pa, miou, iou[0], iou[1], iou[2]))
-            elif args.classes == 2:
-                logger.write("\n %d\t\t%.6f\t%.5f\t\t%.4f\t%0.4f\t%0.4f\t%0.4f\t%0.4f" % (epoch, lr, lossTr, fmiou, pa, miou, iou[0], iou[1]))
-            else:
-                for i in iou:
-                    logger.write("\n %d\t\t%.6f\t%.5f\t\t%.4f\t%0.4f\t%0.4f\t%0.4f\t%0.4f" % (epoch, lr, lossTr, fmiou, pa, miou, iou[0], iou[1]))
+            logger.write("\n %d\t\t%.6f\t%.5f\t\t%.4f\t%0.4f\t%0.4f" % (epoch, lr, lossTr, fmiou, pa, miou))
+            for i in range(len(iou)):
+                logger.write("\t%0.4f" % (iou[i]))
             logger.flush()
             print("Epoch %d\tTrain Loss = %.4f\t mIOU(val) = %.4f\t lr= %.5f\n" % (epoch, lossTr, miou, lr))
         else:
@@ -308,14 +304,11 @@ def train_model(args):
         # save the model
         model_file_name = args.savedir + '/model_' + str(epoch) + '.pth'
         state = {"epoch": epoch, "model": model.state_dict()}
-
-        if min_loss > lossTr:
-            min_loss = lossTr
+        if max_miou < miou and epoch >= args.max_epochs - 50:
+            max_miou = miou
             torch.save(state, model_file_name)
-        elif epoch >= args.max_epochs - args.val_epochs:
+        elif epoch % args.save_epochs == 0:
             torch.save(state, model_file_name)
-        # elif not epoch % args.save_epochs:
-        #     torch.save(state, model_file_name)
 
         # draw plots for visualization
         if epoch % args.val_epochs == 0 or epoch == (args.max_epochs - 1):
@@ -360,8 +353,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=8, help="the batch size is set to 16 for 2 GPUs")
     parser.add_argument('--num_loss', type=int, default=1, help="the number of loss for train")
     parser.add_argument('--val_epochs', type=int, default=10, help=" the number of val of epochs")
-    parser.add_argument('--save_epochs', type=int, default=40, help=" the number of save checkpoint of epochs")
-    parser.add_argument('--random_mirror', type=bool, default=True, help="input image random mirror")
+    parser.add_argument('--save_epochs', type=int, default=50, help=" the number of save checkpoint of epochs")
+    parser.add_argument('--random_mirror', type=bool, default=False, help="input image random mirror")
     parser.add_argument('--random_scale', type=bool, default=True, help="input image resize 0.5 to 2")
     parser.add_argument('--num_workers', type=int, default=4, help=" the number of parallel threads")
     parser.add_argument('--savedir', default="./checkpoint/", help="directory to save the model snapshot")
@@ -382,8 +375,8 @@ if __name__ == '__main__':
         ignore_label = 11
     elif args.dataset == 'paris':
         args.classes = 3
-        # args.input_size = '1024,1024'
-        args.input_size = '512,512'
+        args.input_size = '1024,1024'
+        # args.input_size = '512,512'
         ignore_label = 3
     elif args.dataset == 'austin':
         args.classes = 2

@@ -4,11 +4,6 @@ import random
 import cv2
 from torch.utils import data
 import pickle
-import cupy as cp
-from cupy.core.dlpack import toDlpack
-from cupy.core.dlpack import fromDlpack
-from torch.utils.dlpack import to_dlpack
-from torch.utils.dlpack import from_dlpack
 
 
 class ParisDataSet(data.Dataset):
@@ -70,7 +65,8 @@ class ParisDataSet(data.Dataset):
             label = cv2.resize(label, None, fx=f_scale, fy=f_scale, interpolation=cv2.INTER_NEAREST)
 
         image = np.asarray(image, np.float32)
-        image -= self.mean
+        # image -= self.mean
+        # image /= self.std
         image = image.astype(np.float32) / 255.0
         image = image[:, :, ::-1]  # change to RGB
         img_h, img_w = label.shape
@@ -183,7 +179,8 @@ class ParisValDataSet(data.Dataset):
 
         image = np.asarray(image, np.float32)
 
-        image -= self.mean
+        # image -= self.mean
+        # image /= self.std
         image = image.astype(np.float32) / 255.0
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
@@ -241,12 +238,13 @@ class ParisTestDataSet(data.Dataset):
         image = np.asarray(image, np.float32)
         size = image.shape
 
-        image -= self.mean
+        # image -= self.mean
+        # image /= self.std
         image = image.astype(np.float32) / 255.0
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
 
-        return image.copy(), np.array(size), name, label.copy()
+        return image.copy(), label.copy(), np.array(size), name
 
 
 class ParisTrainInform:

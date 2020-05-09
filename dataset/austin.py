@@ -238,7 +238,7 @@ class AustinTestDataSet(data.Dataset):
         image = image.astype(np.float32) / 255.0
         image = image[:, :, ::-1]  # change to RGB
         image = image.transpose((2, 0, 1))  # HWC -> CHW
-        return image.copy(), np.array(size), name, label.copy()
+        return image.copy(), label.copy(), np.array(size), name
 
 
 class AustinTrainInform:

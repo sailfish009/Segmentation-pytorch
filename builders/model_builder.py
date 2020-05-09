@@ -8,6 +8,7 @@ from model.UNet_res_ori import UNet_res_ori  #没改变resnet基本结构
 from model.UNet_res import UNet_res
 from model.FCN import FCN_res
 from model.BiSeNet import BiSeNet
+from model.lightSeg import lightSeg
 
 
 
@@ -17,6 +18,8 @@ def build_model(model_name, num_classes):
 
     elif model_name == 'FCN_8S_res18':
         return FCN_res(backbone='resnet18', classes=num_classes, pretrained=True, scale=8)
+    elif model_name == 'FCN_8S_res34':
+        return FCN_res(backbone='resnet34', classes=num_classes, pretrained=True, scale=8)
     elif model_name == 'FCN_8S_res50':
         return FCN_res(backbone='resnet50', classes=num_classes, pretrained=True, scale=8)
     elif model_name == 'FCN_8S_res101':
@@ -69,6 +72,8 @@ def build_model(model_name, num_classes):
         return  BiSeNet(backbone='resnet18', n_classes=num_classes, pretrained=False)
     elif model_name == 'BiSeNet_res101':
         return  BiSeNet(backbone='resnet101', n_classes=num_classes, pretrained=False)
+    elif model_name == 'lightSeg':
+        return  lightSeg(backbone='resnet101', n_classes=num_classes, pretrained=False)
 
     elif model_name == 'ENet':
         return ENet(classes=num_classes)

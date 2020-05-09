@@ -112,7 +112,7 @@ class CityscapesValDataSet(data.Dataset):
 
     def __init__(self, root='',
                  list_path='',
-                 f_scale=1, mean=(128, 128, 128), ignore_label=255):
+                 f_scale=0.5, mean=(128, 128, 128), ignore_label=255):
         self.root = root
         self.list_path = list_path
         self.ignore_label = ignore_label

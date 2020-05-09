@@ -229,7 +229,7 @@ class GALDHead(nn.Module):
         output = self.a2block(output, size)
         output = self.convb(output)
         x = F.interpolate(x, size=size, mode="bilinear", align_corners=True)
-        print(x.size(), output.size())
+
         output = self.bottleneck(torch.cat([x, output], 1))
         return output
 
@@ -309,21 +309,21 @@ def GALD_res50(num_classes=21):
 
 if __name__ == '__main__':
     # cuda
-    # import os
-    # os.environ["CUDA_VISIBLE_DEVICES"] = '0'
-    # input = torch.Tensor(1,3,512,512).cuda()
-    # model = GALD_res50(num_classes=3).cuda()  # scale=[8,16,32]
-    # model.eval()
-    # print(model)
-    # output = model(input)
-    # print('GALD_res50', output.size())
+    import os
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+    input = torch.Tensor(1,3,512,512).cuda()
+    model = GALD_res50(num_classes=3).cuda()  # scale=[8,16,32]
+    model.eval()
+    print(model)
+    output = model(input)
+    print('GALD_res50', output.size())
     # summary(model, (3, 512, 512))
 
     # cpu
-    input = torch.Tensor(1, 3, 512, 512)
-    model = GALD_res50(num_classes=3)
-    model.eval()
-    # print(model)
-    output = model(input)
-    print('GALD_res50 output size', output[0].size())
-    summary(model, (3, 512, 512), device='cpu')
+    # input = torch.Tensor(1, 3, 512, 512)
+    # model = GALD_res50(num_classes=3)
+    # model.eval()
+    # # print(model)
+    # output = model(input)
+    # print('GALD_res50 output size', output[0].size())
+    # summary(model, (3, 512, 512), device='cpu')

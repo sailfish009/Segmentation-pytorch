@@ -4,7 +4,7 @@ from torch.autograd import Variable
 import os
 from math import ceil
 from builders.model_builder import build_model
-from builders.dataset_builder import build_dataset_test
+from builders.dataset_builder import build_dataset_sliding_test
 from tools.utils import save_predict
 from argparse import ArgumentParser
 import torch.backends.cudnn as cudnn
@@ -37,12 +37,11 @@ def predict_sliding(net, image, tile_size, classes):
     total_batches = len(image)
     Miou_list = []
     Iou_list = []
-    Acc_list = []
     Pa_list = []
     Mpa_list = []
     Fmiou_list = []
     pbar = tqdm(iterable=enumerate(image), total=total_batches, desc='Predicting')
-    for i, (input, size, name, gt) in pbar:
+    for i, (input, gt, size, name) in pbar:
         image_size = input.shape	#(1,3,3328,3072)
         overlap = 1/3	#每次滑动的覆盖率为1/3
         # print(image_size, tile_size)
@@ -143,6 +142,8 @@ def test_model(args):
     if args.cuda:
         print("=====> use gpu id: '{}'".format(args.gpus))
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpus
+        # print(args.gpus)
+        # torch.cuda.set_device(0)
         if not torch.cuda.is_available():
             raise Exception("no GPU found or wrong gpu id, please run without --cuda")
 
@@ -157,7 +158,7 @@ def test_model(args):
         os.makedirs(args.save_seg_dir)
 
     # load the test set
-    datas, testLoader = build_dataset_test(args.dataset, args.num_workers, none_gt=True)
+    datas, testLoader = build_dataset_sliding_test(args.dataset, args.num_workers, none_gt=True)
 
     if args.checkpoint:
         if os.path.isfile(args.checkpoint):
@@ -172,6 +173,19 @@ def test_model(args):
     # print("=====> beginning testing")
     miou, class_iou, fmiou, pa, mpa = predict_sliding(model.eval(), image = testLoader, tile_size=(args.tile_size, args.tile_size), classes=args.classes)
     print('Miou is: {:.4f}\nClass iou is: {}\nFMiou is: {:.4f}\nPa is: {:.4f}\nMpa is: {:.4f}'.format(miou, class_iou, fmiou, pa, mpa))
+    logFileLoc = args.save_seg_dir + '/result.txt'
+    if os.path.isfile(logFileLoc):
+        logger = open(logFileLoc, 'a')
+    else:
+        logger = open(logFileLoc, 'w')
+        logger.write("%s\t%s\t%s" % ('  Pa', ' Mpa', ' mIOU'))
+        for i in range(args.classes):
+            logger.write("\t%s" % ('Class' + str(i)))
+    logger.write("\n%.4f\t%0.4f\t%0.4f" % (fmiou, pa, miou))
+    for i in range(len(class_iou)):
+        logger.write("\t%0.4f" % (class_iou[i]))
+    logger.flush()
+    logger.flush()
 
 
 
@@ -183,7 +197,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, default=1, help="the number of parallel threads")
     parser.add_argument('--batch_size', type=int, default=1,
                         help=" the batch_size is set to 1 when evaluating or testing")
-    parser.add_argument('--tile_size', type=int, default=512,
+    parser.add_argument('--tile_size', type=int, default=1024,
                         help=" the tile_size is when evaluating or testing")
     parser.add_argument('--checkpoint', type=str,
                         default='',
