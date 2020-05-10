@@ -100,9 +100,9 @@ class Bottleneck(nn.Module):
         return out
 
 
-class Upsample(nn.Module):
+class Upsample2(nn.Module):
     def __init__(self, inplanes, planes, bilinear=False, scale_factor=2):
-        super(Upsample, self).__init__()
+        super(Upsample2, self).__init__()
         self.bilinear = bilinear
         self.scale_factor = scale_factor
         self.inplanes = inplanes
@@ -116,6 +116,7 @@ class Upsample(nn.Module):
         self.bn2 = nn.BatchNorm2d(planes)
         self.conv3 = conv1x1(inplanes, planes)
         self.bn3 = nn.BatchNorm2d(planes)
+        self.up2 = nn.ConvTranspose2d(self.inplanes, self.planes, 2, stride=2)
 
     def forward(self, x1, x2=None):
         if x2 is not None:
@@ -124,18 +125,7 @@ class Upsample(nn.Module):
                 x1 = self.conv3(x1)  # 1×1卷积改通道数
                 x1 = self.bn3(x1)
             else:
-                if self.scale_factor == 2:
-                    # x1 = self.up(x1)
-                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 2, stride=2)(x1)
-                elif self.scale_factor == 8:
-                    # x1 = self.up8(x1)
-                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 8, stride=8)(x1)
-                elif self.scale_factor == 16:
-                    # x1 = self.up16(x1)
-                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 16, stride=16)(x1)
-                elif self.scale_factor == 32:
-                    # x1 = self.up32(x1)
-                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 32, stride=32)(x1)
+                x1 = self.up2(x1)
             # for padding issues, see
             # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
             # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
@@ -159,14 +149,204 @@ class Upsample(nn.Module):
                 x1 = self.conv3(x1)  # 1×1卷积改通道数
                 x1 = self.bn3(x1)
             else:
-                if self.scale_factor == 2:
-                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 2, stride=2)(x1)
-                elif self.scale_factor == 8:
-                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 8, stride=8)(x1)
-                elif self.scale_factor == 16:
-                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 16, stride=16)(x1)
-                elif self.scale_factor == 32:
-                    x1 = nn.ConvTranspose2d(self.inplanes, self.planes, 32, stride=32)(x1)
+                x1 = self.up2(x1)
+
+            identity = x1
+
+            out = self.conv1(x1)
+            out = self.bn1(out)
+            out = self.relu(out)
+
+            out = self.conv2(out)
+            out = self.bn2(out)
+
+            out += identity
+
+            out = self.relu(out)
+            return out
+
+
+class Upsample8(nn.Module):
+    def __init__(self, inplanes, planes, bilinear=False, scale_factor=8):
+        super(Upsample8, self).__init__()
+        self.bilinear = bilinear
+        self.scale_factor = scale_factor
+        self.inplanes = inplanes
+        self.planes = planes
+
+
+        self.conv1 = conv3x3(planes, planes)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv3 = conv1x1(inplanes, planes)
+        self.bn3 = nn.BatchNorm2d(planes)
+        self.up8 = nn.ConvTranspose2d(self.inplanes, self.planes, 8, stride=8)
+
+    def forward(self, x1, x2=None):
+        if x2 is not None:
+            if self.bilinear:
+                x1 = F.interpolate(x1, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+                x1 = self.conv3(x1)  # 1×1卷积改通道数
+                x1 = self.bn3(x1)
+            else:
+                x1 = self.up8(x1)
+            # for padding issues, see
+            # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
+            # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
+            x = x1 + x2
+            identity = x
+
+            out = self.conv1(x)
+            out = self.bn1(out)
+            out = self.relu(out)
+
+            out = self.conv2(out)
+            out = self.bn2(out)
+
+            out += identity
+
+            out = self.relu(out)
+            return out
+        else:
+            if self.bilinear:
+                x1 = F.interpolate(x1, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+                x1 = self.conv3(x1)  # 1×1卷积改通道数
+                x1 = self.bn3(x1)
+            else:
+                x1 = self.up8(x1)
+
+            identity = x1
+
+            out = self.conv1(x1)
+            out = self.bn1(out)
+            out = self.relu(out)
+
+            out = self.conv2(out)
+            out = self.bn2(out)
+
+            out += identity
+
+            out = self.relu(out)
+            return out
+
+
+class Upsample16(nn.Module):
+    def __init__(self, inplanes, planes, bilinear=False, scale_factor=16):
+        super(Upsample16, self).__init__()
+        self.bilinear = bilinear
+        self.scale_factor = scale_factor
+        self.inplanes = inplanes
+        self.planes = planes
+
+
+        self.conv1 = conv3x3(planes, planes)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv3 = conv1x1(inplanes, planes)
+        self.bn3 = nn.BatchNorm2d(planes)
+        self.up16 = nn.ConvTranspose2d(self.inplanes, self.planes, 16, stride=16)
+
+    def forward(self, x1, x2=None):
+        if x2 is not None:
+            if self.bilinear:
+                x1 = F.interpolate(x1, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+                x1 = self.conv3(x1)  # 1×1卷积改通道数
+                x1 = self.bn3(x1)
+            else:
+                x1 = self.up16(x1)
+            # for padding issues, see
+            # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
+            # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
+            x = x1 + x2
+            identity = x
+
+            out = self.conv1(x)
+            out = self.bn1(out)
+            out = self.relu(out)
+
+            out = self.conv2(out)
+            out = self.bn2(out)
+
+            out += identity
+
+            out = self.relu(out)
+            return out
+        else:
+            if self.bilinear:
+                x1 = F.interpolate(x1, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+                x1 = self.conv3(x1)  # 1×1卷积改通道数
+                x1 = self.bn3(x1)
+            else:
+                x1 = self.up16(x1)
+
+            identity = x1
+
+            out = self.conv1(x1)
+            out = self.bn1(out)
+            out = self.relu(out)
+
+            out = self.conv2(out)
+            out = self.bn2(out)
+
+            out += identity
+
+            out = self.relu(out)
+            return out
+
+class Upsample32(nn.Module):
+    def __init__(self, inplanes, planes, bilinear=False, scale_factor=32):
+        super(Upsample32, self).__init__()
+        self.bilinear = bilinear
+        self.scale_factor = scale_factor
+        self.inplanes = inplanes
+        self.planes = planes
+
+
+        self.conv1 = conv3x3(planes, planes)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv2 = conv3x3(planes, planes)
+        self.bn2 = nn.BatchNorm2d(planes)
+        self.conv3 = conv1x1(inplanes, planes)
+        self.bn3 = nn.BatchNorm2d(planes)
+        self.up32 = nn.ConvTranspose2d(self.inplanes, self.planes, 32, stride=32)
+
+    def forward(self, x1, x2=None):
+        if x2 is not None:
+            if self.bilinear:
+                x1 = F.interpolate(x1, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+                x1 = self.conv3(x1)  # 1×1卷积改通道数
+                x1 = self.bn3(x1)
+            else:
+                x1 = self.up8(x1)
+            # for padding issues, see
+            # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
+            # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
+            x = x1 + x2
+            identity = x
+
+            out = self.conv1(x)
+            out = self.bn1(out)
+            out = self.relu(out)
+
+            out = self.conv2(out)
+            out = self.bn2(out)
+
+            out += identity
+
+            out = self.relu(out)
+            return out
+        else:
+            if self.bilinear:
+                x1 = F.interpolate(x1, scale_factor=self.scale_factor, mode='bilinear', align_corners=True)
+                x1 = self.conv3(x1)  # 1×1卷积改通道数
+                x1 = self.bn3(x1)
+            else:
+                x1 = self.up32(x1)
 
             identity = x1
 
@@ -202,24 +382,24 @@ class FCN(nn.Module):
 
         if block.__name__ == 'BasicBlock':
             if self.scale == 32:
-                self.Upsample32 = Upsample(inplanes=512, planes=classes, bilinear=True, scale_factor=32)
+                self.Upsample32 = Upsample32(inplanes=512, planes=classes, bilinear=False, scale_factor=32)
             if self.scale == 16:
-                self.Upsample2 = Upsample(inplanes=512, planes=256, bilinear=True, scale_factor=2)
-                self.Upsample16 = Upsample(inplanes=256, planes=classes, bilinear=True, scale_factor=16)
+                self.Upsample2 = Upsample2(inplanes=512, planes=256, bilinear=False, scale_factor=2)
+                self.Upsample16 = Upsample16(inplanes=256, planes=classes, bilinear=False, scale_factor=16)
             if self.scale == 8:
-                self.Upsample2_1 = Upsample(inplanes=512, planes=256, bilinear=False, scale_factor=2)
-                self.Upsample2_2 = Upsample(inplanes=256, planes=128, bilinear=False, scale_factor=2)
-                self.Upsample8 = Upsample(inplanes=128, planes=classes, bilinear=False, scale_factor=8)
+                self.Upsample2_1 = Upsample2(inplanes=512, planes=256, bilinear=False, scale_factor=2)
+                self.Upsample2_2 = Upsample2(inplanes=256, planes=128, bilinear=False, scale_factor=2)
+                self.Upsample8 = Upsample8(inplanes=128, planes=classes, bilinear=False, scale_factor=8)
         elif block.__name__ == 'Bottleneck':
             if self.scale == 32:
-                self.Upsample32 = Upsample(inplanes=2048, planes=classes, bilinear=True, scale_factor=32)
+                self.Upsample32 = Upsample32(inplanes=2048, planes=classes, bilinear=True, scale_factor=32)
             if self.scale == 16:
-                self.Upsample2 = Upsample(inplanes=2048, planes=1024, bilinear=False, scale_factor=2)
-                self.Upsample16 = Upsample(inplanes=1024, planes=classes, bilinear=False, scale_factor=16)
+                self.Upsample2 = Upsample16(inplanes=2048, planes=1024, bilinear=False, scale_factor=2)
+                self.Upsample16 = Upsample16(inplanes=1024, planes=classes, bilinear=False, scale_factor=16)
             if self.scale == 8:
-                self.Upsample2_1 = Upsample(inplanes=2048, planes=1024, bilinear=True, scale_factor=2)
-                self.Upsample2_2 = Upsample(inplanes=1024, planes=512, bilinear=True, scale_factor=2)
-                self.Upsample8 = Upsample(inplanes=512, planes=classes, bilinear=True, scale_factor=8)
+                self.Upsample2_1 = Upsample2(inplanes=2048, planes=1024, bilinear=False, scale_factor=2)
+                self.Upsample2_2 = Upsample2(inplanes=1024, planes=512, bilinear=False, scale_factor=2)
+                self.Upsample8 = Upsample8(inplanes=512, planes=classes, bilinear=False, scale_factor=8)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -299,6 +479,8 @@ def resnet18(pretrained=False, **kwargs):
         cnn.load_state_dict(model_dict)
 
         return cnn
+    else:
+        return FCN(BasicBlock, [2, 2, 2, 2], **kwargs)
 
 
 def resnet34(pretrained=False, **kwargs):
@@ -404,12 +586,14 @@ if __name__ == '__main__':
     # import os
     # os.environ["CUDA_VISIBLE_DEVICES"] = '0'
     # input = torch.Tensor(1,3,512,512).cuda()
-    # model = FCN_res(backbone='resnet18', classes=3, pretrained=True, scale=16).cuda()  # scale=[8,16,32]
+    # model = FCN_res(backbone='resnet50', classes=3, pretrained=True, scale=8).cuda()  # scale=[8,16,32]
     # model.eval()
-    # print(model)
+    # # print(model)
     # output = model(input)
     # print('FCN_res', output.size())
-    # summary(model, (3, 512, 512))
+    # # summary(model, (3, 512, 512))
+    # total_paramters = netParams(model)
+    # print("the number of parameters: %d ==> %.2f M" % (total_paramters, (total_paramters / 1e6)))
 
     # cpu
     input = torch.Tensor(1, 3, 512, 512)
@@ -422,3 +606,4 @@ if __name__ == '__main__':
 
     total_paramters = netParams(model)
     print("the number of parameters: %d ==> %.2f M" % (total_paramters, (total_paramters / 1e6)))
+
